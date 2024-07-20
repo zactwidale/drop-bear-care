@@ -1,9 +1,9 @@
-"use client";
-import Typography from "@mui/material/Typography";
-import DBCLayout from "@/components/DBCLayout";
-import { useKeyboardAvoidance } from "@/hooks/useKeyboardAvoidance";
-import LoginSplitButton from "@/components/LoginSplitButton";
-import { useAuth } from "@/contexts/AuthProvider";
+'use client';
+import Typography from '@mui/material/Typography';
+import DBCLayout from '@/components/DBCLayout';
+import { useKeyboardAvoidance } from '@/hooks/useKeyboardAvoidance';
+import LoginSplitButton from '@/components/LoginSplitButton';
+import { useAuth } from '@/contexts/AuthProvider';
 
 export default function Contact() {
   const { user } = useAuth();
@@ -11,10 +11,7 @@ export default function Contact() {
   useKeyboardAvoidance();
   return (
     <>
-      <DBCLayout
-        title="Contact Us"
-        rightButton={!user && <LoginSplitButton />}
-      />
+      <DBCLayout title='Contact Us' showLoginButton />
       <Typography>Contact</Typography>
     </>
   );

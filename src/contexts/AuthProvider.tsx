@@ -8,6 +8,34 @@ import * as authServices from '@/lib/firebase/authServices';
 import { OnboardingStage } from '@/types/onboarding';
 
 export type Gender = 'male' | 'female' | 'other' | 'prefer not to say';
+
+export interface Suburb {
+  id: string;
+  suburb: string;
+  state: string;
+  postcode: string;
+  latitude: number;
+  longitude: number;
+}
+export type Day =
+  | 'Monday'
+  | 'Tuesday'
+  | 'Wednesday'
+  | 'Thursday'
+  | 'Friday'
+  | 'Saturday'
+  | 'Sunday';
+
+export interface AvailabilitySlot {
+  id: string;
+  day: Day;
+  startTime: number; // minutes since midnight
+  endTime: number; // minutes since midnight
+}
+export type TimeFormat = '12' | '24';
+
+export type Availability = AvailabilitySlot[];
+
 export interface UserData {
   uid: string;
   firstName: string;
@@ -21,6 +49,9 @@ export interface UserData {
   hideAge?: boolean;
   gender?: Gender;
   bio?: string;
+  location?: Suburb;
+  timeFormatPreference?: TimeFormat;
+  availability?: Availability;
 }
 
 export interface AuthContextProps {

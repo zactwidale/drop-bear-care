@@ -34,6 +34,7 @@ import PersonalDetailsForm, {
   type PersonalDetailsFormRef,
 } from './_components/PersonalDetailsForm';
 import PhotosForm from './_components/PhotosForm';
+import AvailabilityForm from './_components/AvailabilityForm';
 
 const logoutConfirmation = `
 This onboarding process is a necessary part of the process of utilising our services to connect with other members.
@@ -52,6 +53,7 @@ const Onboarding = () => {
   const membershipTypeFormRef = useRef<MembershipTypeFormRef>(null);
   const personalDetailsFormRef = useRef<PersonalDetailsFormRef>(null);
   const bioFormRef = useRef<BioFormRef>(null);
+  const availabilityFormRef = useRef<PersonalDetailsFormRef>(null);
   const [isProcessing, setIsProcessing] = useState(false);
 
   const handleLogoutClick = () => {
@@ -84,8 +86,6 @@ const Onboarding = () => {
     if (userData && !isLastOnboardingStage(userData.onboardingStage)) {
       setIsProcessing(true);
       try {
-        // Simulate network delay
-        await new Promise((resolve) => setTimeout(resolve, 2000));
         if (
           userData.onboardingStage === OnboardingStage.MembershipType &&
           membershipTypeFormRef.current
@@ -101,6 +101,11 @@ const Onboarding = () => {
           bioFormRef.current
         ) {
           await bioFormRef.current.submitForm();
+        } else if (
+          userData.onboardingStage === OnboardingStage.Availability &&
+          availabilityFormRef.current
+        ) {
+          await availabilityFormRef.current.submitForm();
         } else {
           const nextStage = getNextOnboardingStage(userData.onboardingStage);
           if (nextStage !== null) {
@@ -161,6 +166,14 @@ const Onboarding = () => {
         );
       case OnboardingStage.Photos:
         return <PhotosForm />;
+      case OnboardingStage.Availability:
+        return (
+          <AvailabilityForm
+            ref={availabilityFormRef}
+            onSubmit={handleNext}
+            disabled={isProcessing}
+          />
+        );
       case OnboardingStage.Complete:
         return <div>Onboarding Complete!</div>;
       default:

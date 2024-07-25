@@ -1,7 +1,7 @@
-"use client";
-import DBCLayout from "@/components/DBCLayout";
-import { useKeyboardAvoidance } from "@/hooks/useKeyboardAvoidance";
-import DBCMarkdown from "@/components/DBCMarkdown";
+'use client';
+import DBCLayout from '@/components/DBCLayout';
+import { useKeyboardAvoidance } from '@/hooks/useKeyboardAvoidance';
+import DBCMarkdown from '@/components/DBCMarkdown';
 import {
   Box,
   Button,
@@ -12,23 +12,23 @@ import {
   DialogTitle,
   Paper,
   TextField,
-} from "@mui/material";
-import { Formik, Form, Field, type FormikHelpers } from "formik";
-import * as Yup from "yup";
-import { useEffect, useRef, useState } from "react";
-import { useAuth } from "@/contexts/AuthProvider";
-import { useRouter } from "next/navigation";
-import { narrowPaper } from "@/lib/constants";
-import { getEmailFromCookie } from "@/utils/cookieUtils";
-import { EmailLink } from "@/components/EmailLink";
-import { withPublicRouteProtection } from "@/hocs/withPublicRouteProtection";
+} from '@mui/material';
+import { Formik, Form, Field, type FormikHelpers } from 'formik';
+import * as Yup from 'yup';
+import { useEffect, useRef, useState } from 'react';
+import { useAuth } from '@/contexts/AuthProvider';
+import { useRouter } from 'next/navigation';
+import { narrowPaper } from '@/lib/constants';
+import { getEmailFromCookie } from '@/utils/cookieUtils';
+import { EmailLink } from '@/components/EmailLink';
+import { withPublicRouteProtection } from '@/hocs/withPublicRouteProtection';
 
 interface FormValues {
   email: string;
 }
 
 const validationSchema = Yup.object().shape({
-  email: Yup.string().email("Invalid email").required("Email is required"),
+  email: Yup.string().email('Invalid email').required('Email is required'),
 });
 
 const Login: React.FC = () => {
@@ -37,7 +37,7 @@ const Login: React.FC = () => {
   const [openMessageDialog, setOpenMessageDialog] = useState(false);
   const [isSubmittingSocial, setSubmittingSocial] = useState(false);
   const router = useRouter();
-  const [email, setEmail] = useState<string>("");
+  const [email, setEmail] = useState<string>('');
   const [hasSubmitted, setHasSubmitted] = useState(false);
 
   useEffect(() => {
@@ -65,7 +65,7 @@ const Login: React.FC = () => {
   };
 
   const handleClose = () => {
-    router.push("/");
+    router.push('/');
     setOpenMessageDialog(false);
   };
 
@@ -85,7 +85,7 @@ const Login: React.FC = () => {
   useKeyboardAvoidance();
   return (
     <>
-      <DBCLayout title="Password Reset" />
+      <DBCLayout title='Password Reset' />
       <Paper sx={{ maxWidth: narrowPaper }}>
         <DBCMarkdown text={header} />
         <Formik
@@ -98,26 +98,26 @@ const Login: React.FC = () => {
             <Form>
               <Field
                 as={TextField}
-                name="email"
-                autoComplete="email"
-                label="Email"
+                name='email'
+                autoComplete='email'
+                label='Email'
                 inputRef={emailRef}
                 error={hasSubmitted && errors.email}
                 helperText={hasSubmitted && errors.email}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                   setEmail(e.target.value);
-                  setFieldValue("email", e.target.value);
+                  setFieldValue('email', e.target.value);
                 }}
               />
-              <Box display="flex" justifyContent="flex-end">
+              <Box display='flex' justifyContent='flex-end'>
                 <DBCMarkdown text={rememberPassword} />
-                <EmailLink email={email} href="/login" sx={{ paddingTop: 2 }}>
+                <EmailLink email={email} href='/login' sx={{ paddingTop: 2 }}>
                   Return to Login
                 </EmailLink>
               </Box>
-              <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
+              <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
                 <Button
-                  type="submit"
+                  type='submit'
                   disabled={isSubmitting || isSubmittingSocial}
                   sx={{ marginTop: 2 }}
                   onClick={() => {
@@ -127,7 +127,7 @@ const Login: React.FC = () => {
                   {isSubmitting || isSubmittingSocial ? (
                     <CircularProgress size={24} />
                   ) : (
-                    "Reset Password"
+                    'Reset Password'
                   )}
                 </Button>
               </Box>
@@ -139,7 +139,7 @@ const Login: React.FC = () => {
       <Dialog
         open={openMessageDialog}
         onClose={(event, reason) => {
-          if (reason !== "backdropClick" && reason !== "escapeKeyDown") {
+          if (reason !== 'backdropClick' && reason !== 'escapeKeyDown') {
             handleClose();
           }
         }}

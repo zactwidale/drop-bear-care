@@ -1,16 +1,10 @@
-import React, {
-  forwardRef,
-  useImperativeHandle,
-  useRef,
-  useState,
-} from 'react';
-import { Formik, Form, Field, type FormikProps } from 'formik';
+import { forwardRef, useImperativeHandle, useRef, useState } from 'react';
+import { Formik, Form, type FormikProps } from 'formik';
 import * as Yup from 'yup';
-import { Box, CircularProgress } from '@mui/material';
+import { Box } from '@mui/material';
 import DBCMarkdown from '@/components/DBCMarkdown';
 import { useAuth } from '@/contexts/AuthProvider';
 import { getNextOnboardingStage } from '@/types/onboarding';
-import DBCLink from '@/components/DBCLink';
 import TextFieldWithError from '@/components/TextFieldWithError';
 import {
   moderateContent,

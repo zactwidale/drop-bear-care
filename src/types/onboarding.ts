@@ -3,8 +3,8 @@ export enum OnboardingStage {
   MembershipType = 1,
   PersonalDetails = 2,
   Bio = 3,
-  Photos = 5,
-  Availability = 4,
+  Photos = 4,
+  Availability = 5,
   Complete = 6,
 }
 export const OnboardingStageNames: { [key in OnboardingStage]: string } = {

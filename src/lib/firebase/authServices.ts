@@ -1,6 +1,5 @@
 import {
   User,
-  signInWithPopup,
   GoogleAuthProvider,
   signOut as firebaseSignOut,
   FacebookAuthProvider,
@@ -9,6 +8,9 @@ import {
   sendPasswordResetEmail,
   sendEmailVerification,
   createUserWithEmailAndPassword,
+  signInWithRedirect,
+  getRedirectResult,
+  signInWithPopup,
 } from 'firebase/auth';
 import { auth } from '@/lib/firebase/config';
 
@@ -32,64 +34,75 @@ export const signIn = async (
   email?: string,
   password?: string
 ) => {
+  let provider: Provider;
+  switch (providerName) {
+    case 'google':
+      provider = new GoogleAuthProvider();
+      // provider = addScopesToProvider(new GoogleAuthProvider(), [
+      //   'email',
+      //   'profile',
+      // ]);
+      break;
+    case 'facebook':
+      provider = addScopesToProvider(new FacebookAuthProvider(), [
+        'email',
+        'public_profile',
+      ]);
+      break;
+    case 'microsoft':
+      provider = addScopesToProvider(new OAuthProvider('microsoft.com'), [
+        'email',
+        'profile',
+        'user.read',
+      ]);
+      break;
+    case 'apple':
+      provider = addScopesToProvider(new OAuthProvider('apple.com'), [
+        'email',
+        'name',
+      ]);
+      break;
+    case 'email':
+      if (email && password) {
+        return await signInWithEmailAndPassword(auth, email, password);
+      } else {
+        throw new Error('Email and password are required');
+      }
+    default:
+      throw new Error('Unsupported provider');
+  }
+  await signInWithRedirect(auth, provider);
+};
+
+export const handleRedirectResult = async () => {
   try {
-    let provider: Provider;
-    switch (providerName) {
-      case 'google':
-        provider = addScopesToProvider(new GoogleAuthProvider(), [
-          'email',
-          'profile',
-        ]);
-        break;
-      case 'facebook':
-        provider = addScopesToProvider(new FacebookAuthProvider(), [
-          'email',
-          'public_profile',
-        ]);
-        break;
-      case 'microsoft':
-        provider = addScopesToProvider(new OAuthProvider('microsoft.com'), [
-          'email',
-          'profile',
-          'user.read',
-        ]);
-        break;
-      case 'apple':
-        provider = addScopesToProvider(new OAuthProvider('apple.com'), [
-          'email',
-          'name',
-        ]);
-        break;
-      case 'email':
-        if (email && password) {
-          return await signInWithEmailAndPassword(auth, email, password);
-        } else {
-          throw new Error('Email and password are required');
-        }
-      default:
-        throw new Error('Unsupported provider');
+    const result = await getRedirectResult(auth);
+    if (result) {
+      const user = result.user;
+      const additionalUserInfo = (result as any).additionalUserInfo;
+      const profile = additionalUserInfo?.profile || {};
+      const firstName = profile.given_name || profile.first_name || '';
+      const lastName = profile.family_name || profile.last_name || '';
+      return {
+        user,
+        additionalInfo: {
+          firstName,
+          lastName,
+        },
+      };
+    } else {
+      // Check if there's a current user
+      const currentUser = auth.currentUser;
+      return null;
     }
-
-    const result = await signInWithPopup(auth, provider);
-    const user = result.user;
-
-    // Additional user info (might not be available for all providers)
-    const additionalUserInfo = (result as any).additionalUserInfo;
-
-    // Extract additional information if available
-    const profile = additionalUserInfo?.profile || {};
-    const firstName = profile.given_name || profile.first_name || '';
-    const lastName = profile.family_name || profile.last_name || '';
-
-    return {
-      user,
-      additionalInfo: {
-        firstName,
-        lastName,
-      },
-    };
   } catch (error) {
-    console.error('Error signing in:', error);
+    console.error('Error handling redirect result:', error);
+    // Log more details about the error
+    if (error instanceof Error) {
+      console.error('Error name:', error.name);
+      console.error('Error message:', error.message);
+      console.error('Error stack:', error.stack);
+    }
     throw error;
   }
 };

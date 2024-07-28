@@ -3,7 +3,7 @@ const nextConfig = {
   webpack(config) {
     config.module.rules.push({
       test: /\.svg$/,
-      use: ["@svgr/webpack"],
+      use: ['@svgr/webpack'],
     });
     return config;
   },
@@ -12,40 +12,48 @@ const nextConfig = {
   async headers() {
     return [
       {
-        source: "/login",
+        source: '/login',
         headers: [
           {
-            key: "Cross-Origin-Opener-Policy",
-            value: "same-origin-allow-popups",
+            key: 'Cross-Origin-Opener-Policy',
+            value: 'same-origin-allow-popups',
           },
           {
-            key: "Cross-Origin-Embedder-Policy",
-            value: "unsafe-none",
+            key: 'Cross-Origin-Embedder-Policy',
+            value: 'unsafe-none',
           },
           {
-            key: "Content-Security-Policy",
+            key: 'Content-Security-Policy',
             value:
               "frame-ancestors 'self' https://*.firebaseapp.com https://*.google.com; frame-src 'self' https://*.firebaseapp.com https://*.google.com;",
           },
         ],
       },
       {
-        source: "/register",
+        source: '/register',
         headers: [
           {
-            key: "Cross-Origin-Opener-Policy",
-            value: "same-origin-allow-popups",
+            key: 'Cross-Origin-Opener-Policy',
+            value: 'same-origin-allow-popups',
           },
           {
-            key: "Cross-Origin-Embedder-Policy",
-            value: "unsafe-none",
+            key: 'Cross-Origin-Embedder-Policy',
+            value: 'unsafe-none',
           },
           {
-            key: "Content-Security-Policy",
+            key: 'Content-Security-Policy',
             value:
               "frame-ancestors 'self' https://*.firebaseapp.com https://*.google.com; frame-src 'self' https://*.firebaseapp.com https://*.google.com;",
           },
         ],
+      },
+    ];
+  },
+  async rewrites() {
+    return [
+      {
+        source: '/__/auth/:path*',
+        destination: 'https://dropbearcare.firebaseapp.com/__/auth/:path*',
       },
     ];
   },

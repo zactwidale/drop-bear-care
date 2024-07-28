@@ -49,6 +49,7 @@ export interface UserData {
   hideAge?: boolean;
   gender?: Gender;
   bio?: string;
+  photoUrls?: string[];
   location?: Suburb;
   timeFormatPreference?: TimeFormat;
   availability?: Availability;
@@ -89,6 +90,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       }
       setLoading(false);
     });
+    authServices
+      .handleRedirectResult()
+      .then((result) => {
+        if (result) {
+          // Handle any additional actions after successful sign-in
+          console.log('Signed in successfully:', result.user);
+        }
+      })
+      .catch((error) => {
+        console.error('Error handling redirect result:', error);
+      });
     return () => unsubscribe();
   }, []);
 
@@ -151,6 +163,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   ) => {
     try {
       await authServices.signIn(providerName, email, password);
+      // The result will be handled in the useEffect hook
     } catch (error) {
       //TODO - log error to sentry
       console.error('Error signing in:', error);

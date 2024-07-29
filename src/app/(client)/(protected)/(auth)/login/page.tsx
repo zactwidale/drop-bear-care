@@ -29,7 +29,7 @@ import { firebaseErrorToMessage } from '@/utils/authUtils';
 import AccessibleErrorMessage from '@/components/AccessibleErrorMessage';
 import SocialLoginButtons from '@/components/SocialLoginButtons';
 import { useAuth } from '@/contexts/AuthProvider';
-import { withPublicRouteProtection } from '@/hocs/withPublicRouteProtection';
+import { withPublicRouteProtection } from '@/hocs/routeGuards';
 
 interface LoginFormValues {
   email: string;

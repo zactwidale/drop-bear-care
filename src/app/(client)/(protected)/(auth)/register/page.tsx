@@ -1,8 +1,8 @@
-"use client";
-import DBCLayout from "@/components/DBCLayout";
-import { useKeyboardAvoidance } from "@/hooks/useKeyboardAvoidance";
-import DBCMarkdown from "@/components/DBCMarkdown";
-import { Visibility, VisibilityOff } from "@mui/icons-material";
+'use client';
+import DBCLayout from '@/components/DBCLayout';
+import { useKeyboardAvoidance } from '@/hooks/useKeyboardAvoidance';
+import DBCMarkdown from '@/components/DBCMarkdown';
+import { Visibility, VisibilityOff } from '@mui/icons-material';
 import {
   Box,
   Button,
@@ -16,21 +16,21 @@ import {
   Paper,
   TextField,
   Typography,
-} from "@mui/material";
-import { Formik, Form, Field, type FormikHelpers } from "formik";
-import * as Yup from "yup";
-import { useEffect, useRef, useState } from "react";
-import { useAuth, type AuthContextProps } from "@/contexts/AuthProvider";
-import { FirebaseError } from "@firebase/util";
-import { useRouter } from "next/navigation";
-import LoadingPage from "@/components/LoadingPage";
-import { narrowPaper } from "@/lib/constants";
-import { EmailLink } from "@/components/EmailLink";
-import { getEmailFromCookie } from "@/utils/cookieUtils";
-import { firebaseErrorToMessage } from "@/utils/authUtils";
-import AccessibleErrorMessage from "@/components/AccessibleErrorMessage";
-import SocialLoginButtons from "@/components/SocialLoginButtons";
-import { withPublicRouteProtection } from "@/hocs/withPublicRouteProtection";
+} from '@mui/material';
+import { Formik, Form, Field, type FormikHelpers } from 'formik';
+import * as Yup from 'yup';
+import { useEffect, useRef, useState } from 'react';
+import { useAuth, type AuthContextProps } from '@/contexts/AuthProvider';
+import { FirebaseError } from '@firebase/util';
+import { useRouter } from 'next/navigation';
+import LoadingPage from '@/components/LoadingPage';
+import { narrowPaper } from '@/lib/constants';
+import { EmailLink } from '@/components/EmailLink';
+import { getEmailFromCookie } from '@/utils/cookieUtils';
+import { firebaseErrorToMessage } from '@/utils/authUtils';
+import AccessibleErrorMessage from '@/components/AccessibleErrorMessage';
+import SocialLoginButtons from '@/components/SocialLoginButtons';
+import { withPublicRouteProtection } from '@/hocs/routeGuards';
 
 interface LoginFormValues {
   email: string;
@@ -38,10 +38,10 @@ interface LoginFormValues {
 }
 
 const validationSchema = Yup.object().shape({
-  email: Yup.string().email("Invalid email").required("Email is required"),
+  email: Yup.string().email('Invalid email').required('Email is required'),
   password: Yup.string()
-    .min(8, "Password must be at least 8 characters")
-    .required("Password is required"),
+    .min(8, 'Password must be at least 8 characters')
+    .required('Password is required'),
   //TODO- increase password strength requirements
 });
 
@@ -54,7 +54,7 @@ const Register: React.FC = () => {
   const [openErrorDialog, setOpenErrorDialog] = useState(false);
   const [isSubmittingSocial, setSubmittingSocial] = useState(false);
   const router = useRouter();
-  const [email, setEmail] = useState<string>("");
+  const [email, setEmail] = useState<string>('');
   const [hasSubmitted, setHasSubmitted] = useState(false);
 
   useEffect(() => {
@@ -66,7 +66,7 @@ const Register: React.FC = () => {
 
   useEffect(() => {
     if (!loading && user) {
-      router.push("/search");
+      router.push('/search');
     } else if (!loading && !user) {
       emailRef.current!.focus();
     }
@@ -74,25 +74,25 @@ const Register: React.FC = () => {
 
   const initialValues = {
     email: email,
-    password: "",
+    password: '',
   };
 
   const handleSubmit = async (
     values: LoginFormValues,
     { setSubmitting }: FormikHelpers<LoginFormValues>
   ) => {
-    await handleAccountCreation("email", values.email, values.password);
+    await handleAccountCreation('email', values.email, values.password);
     setSubmitting(false);
   };
 
-  const handleAccountCreation: AuthContextProps["signIn"] = async (
+  const handleAccountCreation: AuthContextProps['signIn'] = async (
     providerName,
     email,
     password
   ) => {
     try {
       setSubmittingSocial(true);
-      if (providerName === "email") {
+      if (providerName === 'email') {
         await createAccount(email!, password!);
         await sendVerificationEmail();
       } else {
@@ -100,11 +100,11 @@ const Register: React.FC = () => {
       }
     } catch (error) {
       if (error instanceof FirebaseError) {
-        if (error.code === "auth/popup-closed-by-user") {
+        if (error.code === 'auth/popup-closed-by-user') {
           setSubmittingSocial(false);
           //TODO - figure out why this takes so long
         } else {
-          setErrorMessage(firebaseErrorToMessage(error.code, "register"));
+          setErrorMessage(firebaseErrorToMessage(error.code, 'register'));
           setOpenErrorDialog(true);
         }
       }
@@ -132,7 +132,7 @@ const Register: React.FC = () => {
 
   return (
     <>
-      <DBCLayout title="Create Account" />
+      <DBCLayout title='Create Account' />
       <Paper sx={{ maxWidth: narrowPaper }}>
         <SocialLoginButtons
           disabled={isSubmittingSocial}
@@ -141,11 +141,11 @@ const Register: React.FC = () => {
       </Paper>
       <Paper sx={{ maxWidth: narrowPaper }}>
         <DBCMarkdown text={header1} />
-        <Box display="flex" sx={{ marginBottom: 3 }}>
-          <Typography variant="body1" sx={{ paddingRight: 3 }}>
+        <Box display='flex' sx={{ marginBottom: 3 }}>
+          <Typography variant='body1' sx={{ paddingRight: 3 }}>
             {header2}
           </Typography>
-          <EmailLink email={email} href="/login" sx={{ paddingTop: 0 }}>
+          <EmailLink email={email} href='/login' sx={{ paddingTop: 0 }}>
             Log in here
           </EmailLink>
         </Box>
@@ -156,46 +156,46 @@ const Register: React.FC = () => {
           enableReinitialize
         >
           {({ errors, isSubmitting, setFieldValue }) => (
-            <Form noValidate aria-label="Registration form">
+            <Form noValidate aria-label='Registration form'>
               <Field
                 as={TextField}
-                name="email"
-                autoComplete="email"
-                label="Email"
+                name='email'
+                autoComplete='email'
+                label='Email'
                 inputRef={emailRef}
                 error={hasSubmitted && !!errors.email}
                 helperText={hasSubmitted && errors.email}
-                aria-required="true"
+                aria-required='true'
                 aria-invalid={hasSubmitted && !!errors.email}
-                aria-describedby="email-error"
+                aria-describedby='email-error'
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                   setEmail(e.target.value);
-                  setFieldValue("email", e.target.value);
+                  setFieldValue('email', e.target.value);
                 }}
               />
               {hasSubmitted && errors.email && (
                 <AccessibleErrorMessage
-                  id="email-error"
+                  id='email-error'
                   message={errors.email}
                 />
               )}
               <Field
                 as={TextField}
-                name="password"
-                autoComplete="new-password"
-                label="Password"
-                type={showPassword ? "text" : "password"}
+                name='password'
+                autoComplete='new-password'
+                label='Password'
+                type={showPassword ? 'text' : 'password'}
                 error={hasSubmitted && !!errors.password}
                 helperText={hasSubmitted && errors.password}
-                aria-required="true"
+                aria-required='true'
                 aria-invalid={hasSubmitted && !!errors.password}
-                aria-describedby="password-error"
+                aria-describedby='password-error'
                 InputProps={{
                   endAdornment: (
-                    <InputAdornment position="end">
+                    <InputAdornment position='end'>
                       <IconButton
                         aria-label={
-                          showPassword ? "Hide password" : "Show password"
+                          showPassword ? 'Hide password' : 'Show password'
                         }
                         onClick={() => setShowPassword(!showPassword)}
                         onMouseDown={(e) => e.preventDefault()}
@@ -208,13 +208,13 @@ const Register: React.FC = () => {
               />
               {hasSubmitted && errors.password && (
                 <AccessibleErrorMessage
-                  id="password-error"
+                  id='password-error'
                   message={errors.password}
                 />
               )}
-              <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
+              <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
                 <Button
-                  type="submit"
+                  type='submit'
                   disabled={isSubmitting || isSubmittingSocial}
                   sx={{ marginTop: 2 }}
                   onClick={() => setHasSubmitted(true)}
@@ -222,7 +222,7 @@ const Register: React.FC = () => {
                   {isSubmitting || isSubmittingSocial ? (
                     <CircularProgress size={24} />
                   ) : (
-                    "Create Account"
+                    'Create Account'
                   )}
                 </Button>
               </Box>
@@ -234,7 +234,7 @@ const Register: React.FC = () => {
       <Dialog
         open={openErrorDialog}
         onClose={(event, reason) => {
-          if (reason !== "backdropClick" && reason !== "escapeKeyDown") {
+          if (reason !== 'backdropClick' && reason !== 'escapeKeyDown') {
             handleClose();
           }
         }}

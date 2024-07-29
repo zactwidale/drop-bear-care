@@ -10,6 +10,7 @@ import './globals.css';
 import { AuthProvider } from '@/contexts/AuthProvider';
 import CookieCheck from '@/components/CookieCheck';
 import { Suspense } from 'react';
+import LoadingPage from '@/components/LoadingPage';
 
 export const metadata: Metadata = {
   title: 'Drop Bear Care',
@@ -21,6 +22,7 @@ const RootLayout = ({ children }: { children: React.ReactNode }) => {
   return (
     <html lang='en'>
       <body>
+        {/* TODO - find cleaner solution than this global suspense with no fallback */}
         <Suspense fallback={null}>
           <AppRouterCacheProvider>
             <ThemeProvider theme={theme}>

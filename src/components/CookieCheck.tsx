@@ -1,14 +1,14 @@
-"use client";
+'use client';
 //TODO - get professional opinion on cookie checking
-import { useEffect, useState } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
-import { setCookie, getCookie } from "cookies-next";
-import Dialog from "@mui/material/Dialog";
-import DialogTitle from "@mui/material/DialogTitle";
-import DialogContent from "@mui/material/DialogContent";
-import DialogActions from "@mui/material/DialogActions";
-import Button from "@mui/material/Button";
-import DBCMarkdown from "./DBCMarkdown";
+import { useEffect, useState } from 'react';
+import { useSearchParams, useRouter } from 'next/navigation';
+import { setCookie, getCookie } from 'cookies-next';
+import Dialog from '@mui/material/Dialog';
+import DialogTitle from '@mui/material/DialogTitle';
+import DialogContent from '@mui/material/DialogContent';
+import DialogActions from '@mui/material/DialogActions';
+import Button from '@mui/material/Button';
+import DBCMarkdown from './DBCMarkdown';
 
 const alertMessage = `Cookie's are necessary for the function of this site. \n
 We use them to help secure our site and your data.  We don't use them to track your activity.
@@ -22,17 +22,16 @@ export default function CookieCheck({
 }: {
   children: React.ReactNode;
 }) {
-  const [checkComplete, setCheckComplete] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const searchParams = useSearchParams();
   const router = useRouter();
 
   useEffect(() => {
-    if (searchParams.get("cookie-check") === "needed") {
-      setCookie("cookie-check", "true", { maxAge: 60 * 60 * 24 * 36500 }); // 100 years
+    if (searchParams.get('cookie-check') === 'needed') {
+      setCookie('cookie-check', 'true', { maxAge: 60 * 60 * 24 * 36500 }); // 100 years
 
       // Check if the cookie was set successfully
-      const cookieSet = getCookie("cookie-check");
+      const cookieSet = getCookie('cookie-check');
 
       if (!cookieSet) {
         setShowModal(true);
@@ -40,11 +39,9 @@ export default function CookieCheck({
 
       // Remove the query parameter
       const newSearchParams = new URLSearchParams(searchParams);
-      newSearchParams.delete("cookie-check");
-      router.replace("?" + newSearchParams.toString());
+      newSearchParams.delete('cookie-check');
+      router.replace('?' + newSearchParams.toString());
     }
-
-    setCheckComplete(true);
   }, [router, searchParams]);
 
   return (

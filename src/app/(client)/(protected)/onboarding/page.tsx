@@ -2,7 +2,7 @@
 
 import DBCAppBar from '@/components/DBCAppBar';
 import { useAuth } from '@/contexts/AuthProvider';
-import { withAuthProtection } from '@/hocs/withAuthProtection';
+import { withOnboardingProtection } from '@/hocs/routeGuards';
 import { useRouter } from 'next/navigation';
 import { useRef, useState } from 'react';
 import LogoutIcon from '@mui/icons-material/Logout';
@@ -224,4 +224,4 @@ const Onboarding = () => {
   );
 };
 
-export default withAuthProtection(Onboarding);
+export default withOnboardingProtection(Onboarding);

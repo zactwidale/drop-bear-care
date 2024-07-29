@@ -2,7 +2,6 @@
 import Typography from '@mui/material/Typography';
 import DBCLayout from '@/components/DBCLayout';
 import { useKeyboardAvoidance } from '@/hooks/useKeyboardAvoidance';
-import LoginSplitButton from '@/components/LoginSplitButton';
 import { useAuth } from '@/contexts/AuthProvider';
 
 export default function Contact() {

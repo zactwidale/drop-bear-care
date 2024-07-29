@@ -21,7 +21,7 @@ import { useRouter } from 'next/navigation';
 import { narrowPaper } from '@/lib/constants';
 import { getEmailFromCookie } from '@/utils/cookieUtils';
 import { EmailLink } from '@/components/EmailLink';
-import { withPublicRouteProtection } from '@/hocs/withPublicRouteProtection';
+import { withPublicRouteProtection } from '@/hocs/routeGuards';
 
 interface FormValues {
   email: string;

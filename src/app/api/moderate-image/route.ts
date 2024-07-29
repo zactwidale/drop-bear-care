@@ -12,7 +12,7 @@ function likelihoodToString(
 }
 
 function isPossiblyInappropriate(likelihood: string): boolean {
-  return ['POSSIBLE', 'LIKELY', 'VERY_LIKELY'].includes(likelihood);
+  return ['LIKELY', 'VERY_LIKELY'].includes(likelihood);
 }
 
 function parseCredentials(credentialsString: string): object | null {

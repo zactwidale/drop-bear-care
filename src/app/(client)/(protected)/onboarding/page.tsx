@@ -165,7 +165,7 @@ const Onboarding = () => {
           />
         );
       case OnboardingStage.Photos:
-        return <PhotosForm />;
+        return <PhotosForm onSubmit={handleNext} />;
       case OnboardingStage.Availability:
         return (
           <AvailabilityForm

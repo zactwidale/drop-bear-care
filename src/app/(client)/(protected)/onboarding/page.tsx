@@ -179,6 +179,7 @@ const Onboarding = () => {
             ref={photosFormRef}
             onSubmit={handleNext}
             disabled={isProcessing}
+            setIsProcessing={setIsProcessing}
           />
         );
       case OnboardingStage.Availability:

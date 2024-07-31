@@ -15,6 +15,8 @@ import {
   IconButton,
   Snackbar,
   SnackbarContent,
+  Avatar,
+  ButtonBase,
 } from '@mui/material';
 import { useAuth } from '@/contexts/AuthProvider';
 import { getNextOnboardingStage } from '@/types/onboarding';
@@ -31,15 +33,33 @@ import {
 import { v4 as uuidv4 } from 'uuid';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Navigation, Pagination, EffectCoverflow, A11y } from 'swiper/modules';
+import type { Swiper as SwiperType } from 'swiper';
 import { Delete as DeleteIcon, Close as CloseIcon } from '@mui/icons-material';
 import { moderateImage, ModerationResult } from '@/services/moderationService';
+import DBCMarkdown from '@/components/DBCMarkdown';
+import { compressAndUploadImage } from '@/utils/imageCompression';
+import { styled } from '@mui/material/styles';
 
 // Import Swiper styles
 import 'swiper/css';
 import 'swiper/css/navigation';
 import 'swiper/css/pagination';
 import 'swiper/css/effect-coverflow';
-import DBCMarkdown from '@/components/DBCMarkdown';
+import ResponsiveAvatar from '@/components/ResponsiveAvatar';
+
+const StyledSwiperWrapper = styled(Box)(({ theme }) => ({
+  '& .mySwiper': {
+    paddingBottom: 20,
+  },
+  '& .mySwiper .swiper-pagination': {
+    bottom: '0 !important',
+  },
+  '& .mySwiper .swiper-pagination-bullet': {
+    width: 8,
+    height: 8,
+    margin: '0 4px',
+  },
+}));
 
 interface PhotosFormValues {
   photos: string[];
@@ -57,6 +77,7 @@ const validationSchema = Yup.object().shape({
 interface PhotosFormProps {
   onSubmit: () => void;
   disabled?: boolean;
+  setIsProcessing: (isProcessing: boolean) => void;
 }
 
 export interface PhotosFormRef {
@@ -64,24 +85,40 @@ export interface PhotosFormRef {
 }
 
 const PhotosForm = forwardRef<PhotosFormRef, PhotosFormProps>(
-  ({ onSubmit, disabled = false }, ref) => {
+  ({ onSubmit, disabled = false, setIsProcessing }, ref) => {
     const { userData, updateUserData } = useAuth();
     const formikRef = useRef<FormikProps<PhotosFormValues>>(null);
     const [hasSubmitted, setHasSubmitted] = useState(false);
     const [isUploading, setIsUploading] = useState(false);
     const [isModerating, setIsModerating] = useState(false);
-    const [moderationStatus, setModerationStatus] = useState<string>('');
     const [showErrorModal, setShowErrorModal] = useState(false);
+    const [showAvatarModal, setShowAvatarModal] = useState(false);
     const [errorModalContent, setErrorModalContent] = useState('');
     const [localPhotos, setLocalPhotos] = useState<(File | string)[]>([]);
     const [showSnackbar, setShowSnackbar] = useState(false);
+    const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
+    const [localAvatarURL, setLocalAvatarURL] = useState<string | undefined>(
+      undefined
+    );
 
     useEffect(() => {
-      if (userData && userData.photoUrls) {
-        setLocalPhotos(userData.photoUrls);
-        formikRef.current?.setFieldValue('photos', userData.photoUrls);
+      if (userData) {
+        setLocalPhotos(userData.photoURLs || []);
+        setLocalAvatarURL(userData.photoURL || undefined);
+        formikRef.current?.setFieldValue('photos', userData.photoURLs || []);
       }
     }, [userData]);
+
+    useEffect(() => {
+      setIsProcessing(isModerating || isUploading);
+    }, [isModerating, isUploading, setIsProcessing]);
+
+    const handleSetAvatar = () => {
+      const currentPhoto = localPhotos[currentPhotoIndex];
+      if (currentPhoto && typeof currentPhoto === 'string') {
+        setLocalAvatarURL(currentPhoto);
+      }
+    };
 
     useImperativeHandle(ref, () => ({
       submitForm: async () => {
@@ -105,18 +142,41 @@ const PhotosForm = forwardRef<PhotosFormRef, PhotosFormProps>(
       return getDownloadURL(fileRef);
     };
 
-    const deleteUnusedPhotos = async (currentPhotoUrls: string[]) => {
+    const deleteUnusedPhotos = async (
+      currentPhotoURLs: string[],
+      avatarURL: string | undefined
+    ): Promise<{ validPhotoURLs: string[]; avatarURL: string | undefined }> => {
       const storage = getStorage();
       const userPhotosRef = storageRef(storage, `user-photos/${userData!.uid}`);
 
       const allPhotos = await listAll(userPhotosRef);
+      const storageURLs = await Promise.all(
+        allPhotos.items.map(getDownloadURL)
+      );
 
+      // Filter out any URLs that are not in Firebase Storage
+      let validPhotoURLs = currentPhotoURLs.filter((url) =>
+        storageURLs.includes(url)
+      );
+
+      // Check if avatarURL is still valid (exists in Storage)
+      const isAvatarValid = avatarURL && storageURLs.includes(avatarURL);
+
+      // If avatarURL is valid but not in validPhotoURLs, we keep it in Storage but don't add it back to photoURLs
+      let updatedAvatarURL = isAvatarValid ? avatarURL : undefined;
+
+      // Delete photos from Storage that are not in validPhotoURLs and not the valid avatarURL
       for (const photoRef of allPhotos.items) {
-        const photoUrl = await getDownloadURL(photoRef);
-        if (!currentPhotoUrls.includes(photoUrl)) {
+        const photoURL = await getDownloadURL(photoRef);
+        if (
+          !validPhotoURLs.includes(photoURL) &&
+          (!isAvatarValid || photoURL !== avatarURL)
+        ) {
           await deleteObject(photoRef);
         }
       }
+
+      return { validPhotoURLs, avatarURL: updatedAvatarURL };
     };
 
     const handleFileChange = async (
@@ -147,13 +207,22 @@ const PhotosForm = forwardRef<PhotosFormRef, PhotosFormProps>(
           continue;
         }
 
-        setModerationStatus(
-          `Moderating image ${newLocalPhotos.length + 1} of ${files.length}...`
-        );
         const moderationResult: ModerationResult = await moderateImage(file);
 
         if (moderationResult.isApproved) {
-          newLocalPhotos.push(file);
+          try {
+            const compressedImageURL = await compressAndUploadImage(
+              file,
+              userData!.uid
+            );
+            newLocalPhotos.push(compressedImageURL);
+          } catch (error) {
+            console.error('Failed to compress and upload image:', error);
+            setErrorModalContent(
+              `Failed to process image ${file.name}. Please try again.`
+            );
+            setShowErrorModal(true);
+          }
         } else {
           setErrorModalContent(
             `Image ${file.name} failed moderation and was not added.`
@@ -166,7 +235,6 @@ const PhotosForm = forwardRef<PhotosFormRef, PhotosFormProps>(
       setFieldValue('photos', newLocalPhotos);
 
       setIsModerating(false);
-      setModerationStatus('');
       event.target.value = '';
     };
 
@@ -179,9 +247,8 @@ const PhotosForm = forwardRef<PhotosFormRef, PhotosFormProps>(
     const handleSubmit = async (values: PhotosFormValues) => {
       try {
         setIsUploading(true);
-        setModerationStatus('Processing photos...');
 
-        const uploadedUrls = await Promise.all(
+        const uploadedURLs = await Promise.all(
           localPhotos.map(async (photo) => {
             if (typeof photo === 'string') {
               return photo; // Already a URL, no need to upload
@@ -190,13 +257,14 @@ const PhotosForm = forwardRef<PhotosFormRef, PhotosFormProps>(
             }
           })
         );
-
-        await deleteUnusedPhotos(uploadedUrls);
+        const { validPhotoURLs, avatarURL: updatedAvatarURL } =
+          await deleteUnusedPhotos(uploadedURLs, localAvatarURL);
 
         const nextStage = getNextOnboardingStage(userData!.onboardingStage);
         if (nextStage !== null) {
           await updateUserData({
-            photoUrls: uploadedUrls,
+            photoURLs: validPhotoURLs,
+            photoURL: updatedAvatarURL,
             onboardingStage: nextStage,
           });
           onSubmit();
@@ -211,7 +279,6 @@ const PhotosForm = forwardRef<PhotosFormRef, PhotosFormProps>(
         setShowErrorModal(true);
       } finally {
         setIsUploading(false);
-        setModerationStatus('');
       }
     };
 
@@ -246,183 +313,260 @@ const PhotosForm = forwardRef<PhotosFormRef, PhotosFormProps>(
 There is a maximum of ${MAX_PHOTOS} photos.`;
 
     const headerMessage = `Please upload up to ${MAX_PHOTOS} photos that you'd like to share
-with the community to help illustrate who you are.  Then select one of them to be your avatar.`;
+with the community to help illustrate who you are.  Then select one of them to be your 
+[avatar](function=setShowAvatarModal).\n
+**Note:** For best results, select a square image for your avatar.  More comprehensive image
+manipulation is certainly on the 'To Do' list.`;
 
     return (
-      <Box sx={{ width: '100%', maxWidth: 600, margin: 'auto' }}>
-        <DBCMarkdown text={headerMessage} />
-        <Typography variant='body1' paragraph></Typography>
-        <Formik
-          innerRef={formikRef}
-          initialValues={{
-            photos: [],
-          }}
-          validationSchema={validationSchema}
-          onSubmit={handleSubmit}
-        >
-          {({ isSubmitting, setFieldValue, errors, values }) => (
-            <Form noValidate>
-              <fieldset
-                disabled={
-                  disabled || isSubmitting || isUploading || isModerating
-                }
-                style={{ border: 'none', padding: 0, margin: 0 }}
-              >
-                <input
-                  accept='image/jpeg,image/png,image/webp'
-                  style={{ display: 'none' }}
-                  id='photo-upload'
-                  type='file'
-                  multiple
-                  onChange={(event) => handleFileChange(event, setFieldValue)}
-                />
-                <label htmlFor='photo-upload'>
-                  <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-                    <Button
-                      variant='contained'
-                      component='span'
-                      disabled={
-                        values.photos.length >= MAX_PHOTOS || isModerating
-                      }
-                      startIcon={
-                        isModerating ? (
-                          <CircularProgress size={20} color='inherit' />
-                        ) : null
-                      }
-                    >
-                      {isModerating
-                        ? 'Moderating...'
-                        : values.photos.length === 0
-                        ? 'Choose Photos (Optional)'
-                        : 'Add More Photos'}
-                    </Button>
-                  </Box>
-                </label>
-                {hasSubmitted && errors.photos && renderErrors(errors.photos)}
-                {moderationStatus && (
-                  <Box sx={{ display: 'flex', justifyContent: 'center' }}>
-                    <DBCMarkdown text={moderationStatus} />
-                  </Box>
-                )}
-                {localPhotos.length > 0 && (
+      <StyledSwiperWrapper>
+        <Box sx={{ width: '100%', maxWidth: 600, margin: 'auto' }}>
+          <DBCMarkdown
+            text={headerMessage}
+            functionLinks={{
+              setShowAvatarModal: () => setShowAvatarModal(true),
+            }}
+          />
+          <Formik
+            innerRef={formikRef}
+            initialValues={{ photos: [] }}
+            validationSchema={validationSchema}
+            onSubmit={handleSubmit}
+          >
+            {({ isSubmitting, setFieldValue, errors, values }) => (
+              <Form noValidate>
+                <fieldset
+                  disabled={
+                    disabled || isSubmitting || isUploading || isModerating
+                  }
+                  style={{ border: 'none', padding: 0, margin: 0 }}
+                >
                   <Box
                     sx={{
-                      pt: 2,
-                      height: 300,
-                      maxWidth: 300,
-                      margin: 'auto',
+                      position: 'relative',
+                      minHeight:
+                        localPhotos.length > 0 ? 'calc(110px + 300px)' : 46,
                     }}
                   >
-                    <Swiper
-                      modules={[Navigation, Pagination, EffectCoverflow, A11y]}
-                      spaceBetween={30}
-                      slidesPerView={1}
-                      centeredSlides
-                      loop
-                      navigation
-                      pagination={{ clickable: true }}
-                      effect={'coverflow'}
-                      coverflowEffect={{
-                        rotate: 50,
-                        stretch: 0,
-                        depth: 100,
-                        modifier: 1,
-                        slideShadows: true,
-                      }}
-                      a11y={{
-                        prevSlideMessage: 'Previous photo',
-                        nextSlideMessage: 'Next photo',
-                        firstSlideMessage: 'This is the first photo',
-                        lastSlideMessage: 'This is the last photo',
+                    <input
+                      accept='image/jpeg,image/png,image/webp'
+                      style={{ display: 'none' }}
+                      id='photo-upload'
+                      type='file'
+                      multiple
+                      onChange={(event) =>
+                        handleFileChange(event, setFieldValue)
+                      }
+                    />
+                    {localAvatarURL && localPhotos.length > 0 && (
+                      <Box
+                        sx={{
+                          position: 'absolute',
+                          top: 0,
+                          right: 0,
+                          zIndex: 10,
+                        }}
+                      >
+                        <ButtonBase onClick={() => setShowAvatarModal(true)}>
+                          <Avatar
+                            src={localAvatarURL}
+                            alt='User avatar'
+                            sx={{
+                              width: 100,
+                              height: 100,
+                              border: '3px solid white',
+                            }}
+                          />
+                        </ButtonBase>
+                      </Box>
+                    )}
+                    <Box
+                      sx={{
+                        position: 'absolute',
+                        top: 0,
+                        right: localPhotos.length === 0 ? 0 : 'auto',
+                        left: localPhotos.length > 0 ? 0 : 'auto',
+                        zIndex: 1,
                       }}
                     >
-                      {localPhotos.map((photo, index) => (
-                        <SwiperSlide
-                          key={typeof photo === 'string' ? photo : index}
+                      <label htmlFor='photo-upload'>
+                        <Button
+                          variant='contained'
+                          component='span'
+                          disabled={
+                            values.photos.length >= MAX_PHOTOS ||
+                            isModerating ||
+                            isUploading ||
+                            isSubmitting
+                          }
+                          startIcon={
+                            isModerating ? (
+                              <CircularProgress size={20} color='inherit' />
+                            ) : null
+                          }
                         >
-                          <Box
-                            sx={{
-                              position: 'relative',
-                              width: '100%',
-                              height: '280px',
-                              display: 'flex',
-                              justifyContent: 'center',
-                              alignItems: 'center',
-                            }}
-                          >
-                            <Image
-                              src={
-                                typeof photo === 'string'
-                                  ? photo
-                                  : URL.createObjectURL(photo)
-                              }
-                              alt={`Preview ${index + 1}`}
-                              fill
-                              objectFit='contain'
-                              priority={true}
-                            />
-                            <IconButton
-                              onClick={() => removePhoto(index)}
-                              sx={{
-                                position: 'absolute',
-                                bottom: 8,
-                                right: 8,
-                                backgroundColor: 'rgba(0, 0, 0, 0.5)',
-                                color: 'white',
-                                '&:hover': {
-                                  backgroundColor: 'rgba(0, 0, 0, 0.7)',
-                                },
-                              }}
-                              aria-label={`Remove photo ${index + 1}`}
+                          {isModerating
+                            ? 'Moderating...'
+                            : values.photos.length === 0
+                            ? 'Choose Photos'
+                            : 'Add More Photos'}
+                        </Button>
+                      </label>
+                    </Box>
+                    {hasSubmitted &&
+                      errors.photos &&
+                      renderErrors(errors.photos)}
+                    {localPhotos.length > 0 && (
+                      <Box
+                        sx={{
+                          pt: 8,
+                          height: 300,
+                          maxWidth: 300,
+                          margin: 'auto',
+                        }}
+                      >
+                        <Swiper
+                          modules={[
+                            Navigation,
+                            Pagination,
+                            EffectCoverflow,
+                            A11y,
+                          ]}
+                          spaceBetween={30}
+                          slidesPerView={1}
+                          centeredSlides
+                          loop
+                          navigation
+                          pagination={{ clickable: true }}
+                          effect={'coverflow'}
+                          coverflowEffect={{
+                            rotate: 50,
+                            stretch: 0,
+                            depth: 100,
+                            modifier: 1,
+                            slideShadows: true,
+                          }}
+                          onSlideChange={(swiper: SwiperType) =>
+                            setCurrentPhotoIndex(swiper.realIndex)
+                          }
+                          a11y={{
+                            prevSlideMessage: 'Previous photo',
+                            nextSlideMessage: 'Next photo',
+                            firstSlideMessage: 'This is the first photo',
+                            lastSlideMessage: 'This is the last photo',
+                          }}
+                          className='mySwiper'
+                        >
+                          {localPhotos.map((photo, index) => (
+                            <SwiperSlide
+                              key={typeof photo === 'string' ? photo : index}
                             >
-                              <DeleteIcon />
-                            </IconButton>
-                          </Box>
-                        </SwiperSlide>
-                      ))}
-                    </Swiper>
+                              <Box
+                                sx={{
+                                  position: 'relative',
+                                  width: '100%',
+                                  height: '280px',
+                                }}
+                              >
+                                <Image
+                                  src={
+                                    typeof photo === 'string'
+                                      ? photo
+                                      : URL.createObjectURL(photo)
+                                  }
+                                  alt={`User photo ${index + 1}`}
+                                  fill
+                                  priority={index === 0}
+                                  style={{
+                                    maxWidth: '100%',
+                                    objectFit: 'contain',
+                                  }}
+                                />
+                                <IconButton
+                                  onClick={() => removePhoto(index)}
+                                  sx={{
+                                    position: 'absolute',
+                                    bottom: 0,
+                                    right: 0,
+                                    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+                                    color: 'white',
+                                    '&:hover': {
+                                      backgroundColor: 'rgba(0, 0, 0, 0.7)',
+                                    },
+                                  }}
+                                  aria-label={`Remove photo ${index + 1}`}
+                                >
+                                  <DeleteIcon />
+                                </IconButton>
+                              </Box>
+                            </SwiperSlide>
+                          ))}
+                        </Swiper>
+                        <Button
+                          variant='contained'
+                          onClick={handleSetAvatar}
+                          disabled={
+                            localAvatarURL === localPhotos[currentPhotoIndex] ||
+                            isModerating ||
+                            isUploading ||
+                            isSubmitting
+                          }
+                          sx={{ display: 'block', margin: '0 auto 0' }}
+                        >
+                          Set as Avatar
+                        </Button>
+                      </Box>
+                    )}
                   </Box>
-                )}
-              </fieldset>
-              {isUploading && (
-                <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
-                  <CircularProgress />
-                </Box>
-              )}
-            </Form>
-          )}
-        </Formik>
-        <Snackbar
-          anchorOrigin={{
-            vertical: 'top',
-            horizontal: 'center',
-          }}
-          open={showSnackbar}
-          autoHideDuration={6000}
-          onClose={handleCloseSnackbar}
-        >
-          <SnackbarContent
-            message={<DBCMarkdown text={snackbarContent} />}
-            action={
-              <IconButton
-                size='small'
-                aria-label='close'
-                color='inherit'
-                onClick={handleCloseSnackbar}
-              >
-                <CloseIcon fontSize='small' />
-              </IconButton>
-            }
+                </fieldset>
+              </Form>
+            )}
+          </Formik>
+          <Snackbar
+            anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+            open={showSnackbar}
+            autoHideDuration={6000}
+            onClose={handleCloseSnackbar}
+          >
+            <SnackbarContent
+              message={<DBCMarkdown text={snackbarContent} />}
+              action={
+                <IconButton
+                  size='small'
+                  aria-label='close'
+                  color='inherit'
+                  onClick={handleCloseSnackbar}
+                >
+                  <CloseIcon fontSize='small' />
+                </IconButton>
+              }
+            />
+          </Snackbar>
+          <InfoModal
+            isOpen={showErrorModal}
+            onClose={() => setShowErrorModal(false)}
+            title='Whoops!'
+            content={errorModalContent}
+            closeButtonText='Close'
           />
-        </Snackbar>
-        <InfoModal
-          isOpen={showErrorModal}
-          onClose={() => setShowErrorModal(false)}
-          title='Whoops!'
-          content={errorModalContent}
-          closeButtonText='Close'
-        />
-      </Box>
+          <InfoModal
+            isOpen={showAvatarModal}
+            onClose={() => setShowAvatarModal(false)}
+            title=''
+            content={
+              <Box
+                sx={{
+                  display: 'flex',
+                  justifyContent: 'center',
+                }}
+              >
+                <ResponsiveAvatar src={localAvatarURL!} />
+              </Box>
+            }
+            closeButtonText='Close'
+          />
+        </Box>
+      </StyledSwiperWrapper>
     );
   }
 );

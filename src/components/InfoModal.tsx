@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, ReactNode } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -15,7 +15,7 @@ interface InfoModalProps {
   isOpen: boolean;
   onClose: () => void;
   title: string;
-  content: string;
+  content: string | ReactNode;
   closeButtonText?: string;
 }
 
@@ -29,6 +29,7 @@ const InfoModal: React.FC<InfoModalProps> = ({
   const [isScrollable, setIsScrollable] = useState(false);
   const [isScrolledToBottom, setIsScrolledToBottom] = useState(false);
   const contentRef = useRef<HTMLDivElement>(null);
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
 
   const handleClose = (
     event: {},
@@ -53,7 +54,10 @@ const InfoModal: React.FC<InfoModalProps> = ({
 
   useEffect(() => {
     if (isOpen) {
-      setTimeout(checkScrollable, 100);
+      setTimeout(() => {
+        checkScrollable();
+        closeButtonRef.current?.focus();
+      }, 100);
     }
   }, [isOpen, content]);
 
@@ -64,6 +68,22 @@ const InfoModal: React.FC<InfoModalProps> = ({
 
   const handleScroll = () => {
     checkScrollable();
+  };
+
+  const renderContent = () => {
+    if (typeof content === 'string') {
+      return <DBCMarkdown text={content} />;
+    }
+    return content;
+  };
+
+  const scrollToBottom = () => {
+    if (contentRef.current) {
+      contentRef.current.scrollTo({
+        top: contentRef.current.scrollHeight,
+        behavior: 'smooth',
+      });
+    }
   };
 
   return (
@@ -84,17 +104,20 @@ const InfoModal: React.FC<InfoModalProps> = ({
         sx={{
           position: 'relative',
           padding: 2,
-          overflow: 'hidden', // Hide overflow to contain the gradient
+          overflow: 'hidden',
         }}
       >
         <Box
           ref={contentRef}
           onScroll={handleScroll}
+          tabIndex={0}
+          aria-labelledby='info-dialog-title'
+          id='info-dialog-description'
           sx={{
             overflowY: 'auto',
-            maxHeight: 'calc(80vh - 64px - 52px)', // Subtract DialogTitle and DialogActions heights
-            pr: 2, // Add right padding for scrollbar
-            mr: -2, // Negative margin to compensate for padding
+            maxHeight: 'calc(80vh - 64px - 52px)',
+            pr: 2,
+            mr: -2,
             '&::-webkit-scrollbar': {
               width: '8px',
             },
@@ -104,7 +127,7 @@ const InfoModal: React.FC<InfoModalProps> = ({
             },
           }}
         >
-          <DBCMarkdown text={content} />
+          {renderContent()}
         </Box>
         {isScrollable && !isScrolledToBottom && (
           <Box
@@ -115,9 +138,10 @@ const InfoModal: React.FC<InfoModalProps> = ({
               right: 0,
               height: '100px',
               background:
-                'linear-gradient(to bottom, rgba(255,255,255,0) 0%, rgba(255,255,255,0.8) 40%, rgba(255,255,255,1) 100%)', // Modified gradient
+                'linear-gradient(to bottom, rgba(255,255,255,0) 0%, rgba(255,255,255,0.8) 40%, rgba(255,255,255,1) 100%)',
               pointerEvents: 'none',
             }}
+            aria-hidden='true'
           />
         )}
       </DialogContent>
@@ -142,12 +166,7 @@ const InfoModal: React.FC<InfoModalProps> = ({
         >
           <IconButton
             size='small'
-            onClick={() =>
-              contentRef.current?.scrollTo({
-                top: contentRef.current.scrollHeight,
-                behavior: 'smooth',
-              })
-            }
+            onClick={scrollToBottom}
             aria-label='Scroll to bottom'
           >
             <KeyboardArrowDownIcon />
@@ -156,7 +175,7 @@ const InfoModal: React.FC<InfoModalProps> = ({
       )}
       <DialogActions>
         <Box sx={{ width: '100%', textAlign: 'right' }}>
-          <Button onClick={onClose} autoFocus>
+          <Button onClick={onClose} autoFocus ref={closeButtonRef}>
             {closeButtonText}
           </Button>
         </Box>

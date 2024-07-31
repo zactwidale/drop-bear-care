@@ -49,7 +49,7 @@ export interface UserData {
   hideAge?: boolean;
   gender?: Gender;
   bio?: string;
-  photoUrls?: string[];
+  photoURLs?: string[];
   location?: Suburb;
   timeFormatPreference?: TimeFormat;
   availability?: Availability;

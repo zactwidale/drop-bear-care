@@ -8,7 +8,7 @@ import DialogTitle from '@mui/material/DialogTitle';
 import DialogContent from '@mui/material/DialogContent';
 import DialogActions from '@mui/material/DialogActions';
 import Button from '@mui/material/Button';
-import DBCMarkdown from './DBCMarkdown';
+import DBCMarkdown from '../src/components/DBCMarkdown';
 
 const alertMessage = `Cookie's are necessary for the function of this site. \n
 We use them to help secure our site and your data.  We don't use them to track your activity.

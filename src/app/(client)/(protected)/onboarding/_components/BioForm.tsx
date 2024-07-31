@@ -58,16 +58,16 @@ const BioForm = forwardRef<BioFormRef, BioFormProps>(
         if (!moderationResult.isApproved) {
           switch (moderationResult.reason) {
             case 'inappropriate':
-              setModerationError(`The AI content moderation service has flagged your bio as containing
+              setModerationError(`Google's AI content moderation service has flagged your bio as containing
 potentially inapropriate or offensive language.
 
 If you feel that it has been excessively politically correct, please [let us know.](/contact) and we
-will consider how we can improve it.
+will consider how we can fine tune it.
 
 In the meantime, please try again with less provocative language.`);
               return;
             case 'contactInfo':
-              setModerationError(`The AI content moderation service has flagged your bio as containing
+              setModerationError(`Google's AI content moderation service has flagged your bio as containing
 contact or personal information.
 
 These details may be shared freely in one-on-one chats with other users, but we ask that you do not share
@@ -94,7 +94,7 @@ them in you profile.`);
       } catch (error) {
         console.error('Error updating bio and onboarding stage:', error);
         setModerationError(
-          'An error occurred while processing your submission'
+          'An error occurred while processing your submission. Please [let us know.](/contact) and we will investigate what went wrong.'
         );
       } finally {
         setIsModeratingContent(false);
@@ -116,6 +116,8 @@ who you REALLY are!`;
           return ``;
       }
     };
+
+    const footerMessage = `If you'd like to add a little flair to your bio, it will be rendered using [Markdown](https://www.markdownguide.org).`;
 
     return (
       <Box sx={{ width: '100%', maxWidth: 600, margin: 'auto' }}>
@@ -147,13 +149,12 @@ who you REALLY are!`;
             </Form>
           )}
         </Formik>
+        <DBCMarkdown text={footerMessage} />
         <InfoModal
           isOpen={moderationError !== null}
           onClose={() => setModerationError(null)}
           title='Content Moderation Error'
-          content={
-            moderationError || 'An error occurred during content moderation.'
-          }
+          content={moderationError!}
           closeButtonText='Try Again'
         />
       </Box>

@@ -64,7 +64,7 @@ export function withOnboardingProtection<P extends object>(
         setOnboardingState('onboarding');
       } else {
         setOnboardingState('completed');
-        redirect('/dashboard');
+        redirect('/search');
       }
     }, [user, userData, loading, redirect]);
 

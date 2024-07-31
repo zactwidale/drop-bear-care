@@ -95,7 +95,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       .then((result) => {
         if (result) {
           // Handle any additional actions after successful sign-in
-          console.log('Signed in successfully:', result.user);
         }
       })
       .catch((error) => {

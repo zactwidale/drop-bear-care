@@ -33,8 +33,9 @@ import BioForm, { BioFormRef } from './_components/BioForm';
 import PersonalDetailsForm, {
   type PersonalDetailsFormRef,
 } from './_components/PersonalDetailsForm';
-import PhotosForm from './_components/PhotosForm';
+import PhotosForm, { type PhotosFormRef } from './_components/PhotosForm';
 import AvailabilityForm from './_components/AvailabilityForm';
+import LoadingPage from '@/components/LoadingPage';
 
 const logoutConfirmation = `
 This onboarding process is a necessary part of the process of utilising our services to connect with other members.
@@ -53,8 +54,13 @@ const Onboarding = () => {
   const membershipTypeFormRef = useRef<MembershipTypeFormRef>(null);
   const personalDetailsFormRef = useRef<PersonalDetailsFormRef>(null);
   const bioFormRef = useRef<BioFormRef>(null);
+  const photosFormRef = useRef<PhotosFormRef>(null);
   const availabilityFormRef = useRef<PersonalDetailsFormRef>(null);
   const [isProcessing, setIsProcessing] = useState(false);
+
+  if (!userData) {
+    return <LoadingPage />;
+  }
 
   const handleLogoutClick = () => {
     setOpenDialog(true);
@@ -66,13 +72,11 @@ const Onboarding = () => {
 
   const handleConfirmLogout = async () => {
     try {
+      setOpenDialog(false);
       await signOut();
-      router.push('/');
     } catch (error) {
       //TODO - log to sentry
       console.error('Logout failed:', error);
-    } finally {
-      setOpenDialog(false);
     }
   };
 
@@ -101,6 +105,11 @@ const Onboarding = () => {
           bioFormRef.current
         ) {
           await bioFormRef.current.submitForm();
+        } else if (
+          userData.onboardingStage === OnboardingStage.Photos &&
+          photosFormRef.current
+        ) {
+          await photosFormRef.current.submitForm();
         } else if (
           userData.onboardingStage === OnboardingStage.Availability &&
           availabilityFormRef.current
@@ -165,7 +174,13 @@ const Onboarding = () => {
           />
         );
       case OnboardingStage.Photos:
-        return <PhotosForm onSubmit={handleNext} />;
+        return (
+          <PhotosForm
+            ref={photosFormRef}
+            onSubmit={handleNext}
+            disabled={isProcessing}
+          />
+        );
       case OnboardingStage.Availability:
         return (
           <AvailabilityForm

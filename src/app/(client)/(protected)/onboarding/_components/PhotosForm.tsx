@@ -16,7 +16,6 @@ import {
   Snackbar,
   SnackbarContent,
 } from '@mui/material';
-import { styled } from '@mui/material/styles';
 import { useAuth } from '@/contexts/AuthProvider';
 import { getNextOnboardingStage } from '@/types/onboarding';
 import InfoModal from '@/components/InfoModal';
@@ -26,6 +25,8 @@ import {
   ref as storageRef,
   uploadBytes,
   getDownloadURL,
+  deleteObject,
+  listAll,
 } from 'firebase/storage';
 import { v4 as uuidv4 } from 'uuid';
 import { Swiper, SwiperSlide } from 'swiper/react';
@@ -41,36 +42,15 @@ import 'swiper/css/effect-coverflow';
 import DBCMarkdown from '@/components/DBCMarkdown';
 
 interface PhotosFormValues {
-  photos: File[];
+  photos: string[];
 }
 
-const MAX_PHOTOS = 2;
-const MAX_FILE_SIZE = 5000000; // 5MB
+const MAX_PHOTOS = 5;
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 
 const validationSchema = Yup.object().shape({
   photos: Yup.array()
-    .of(
-      Yup.mixed<File>()
-        .test(
-          'fileSize',
-          'The file is too large',
-          (value: File | undefined) => {
-            if (!value) return true;
-            return value.size <= MAX_FILE_SIZE;
-          }
-        )
-        .test(
-          'fileType',
-          'Unsupported file format',
-          (value: File | undefined) => {
-            if (!value) return true;
-            return ['image/jpeg', 'image/png', 'image/webp'].includes(
-              value.type
-            );
-          }
-        )
-    )
-    .min(1, 'Please upload at least one photo')
+    .of(Yup.string())
     .max(MAX_PHOTOS, `You can upload a maximum of ${MAX_PHOTOS} photos`),
 });
 
@@ -83,8 +63,6 @@ export interface PhotosFormRef {
   submitForm: () => Promise<void>;
 }
 
-const StyledSnackbarContent = styled(SnackbarContent)(({ theme }) => ({}));
-
 const PhotosForm = forwardRef<PhotosFormRef, PhotosFormProps>(
   ({ onSubmit, disabled = false }, ref) => {
     const { userData, updateUserData } = useAuth();
@@ -92,28 +70,18 @@ const PhotosForm = forwardRef<PhotosFormRef, PhotosFormProps>(
     const [hasSubmitted, setHasSubmitted] = useState(false);
     const [isUploading, setIsUploading] = useState(false);
     const [isModerating, setIsModerating] = useState(false);
-    const [previewUrls, setPreviewUrls] = useState<string[]>([]);
-    const [exceedsMaxPhotos, setExceedsMaxPhotos] = useState(false);
-    const [showSnackbar, setShowSnackbar] = useState(false);
     const [moderationStatus, setModerationStatus] = useState<string>('');
     const [showErrorModal, setShowErrorModal] = useState(false);
     const [errorModalContent, setErrorModalContent] = useState('');
+    const [localPhotos, setLocalPhotos] = useState<(File | string)[]>([]);
+    const [showSnackbar, setShowSnackbar] = useState(false);
 
     useEffect(() => {
-      if (exceedsMaxPhotos) {
-        setShowSnackbar(true);
+      if (userData && userData.photoUrls) {
+        setLocalPhotos(userData.photoUrls);
+        formikRef.current?.setFieldValue('photos', userData.photoUrls);
       }
-    }, [exceedsMaxPhotos]);
-
-    const handleCloseSnackbar = (
-      event: React.SyntheticEvent | Event,
-      reason?: string
-    ) => {
-      if (reason === 'clickaway') {
-        return;
-      }
-      setShowSnackbar(false);
-    };
+    }, [userData]);
 
     useImperativeHandle(ref, () => ({
       submitForm: async () => {
@@ -137,18 +105,93 @@ const PhotosForm = forwardRef<PhotosFormRef, PhotosFormProps>(
       return getDownloadURL(fileRef);
     };
 
+    const deleteUnusedPhotos = async (currentPhotoUrls: string[]) => {
+      const storage = getStorage();
+      const userPhotosRef = storageRef(storage, `user-photos/${userData!.uid}`);
+
+      const allPhotos = await listAll(userPhotosRef);
+
+      for (const photoRef of allPhotos.items) {
+        const photoUrl = await getDownloadURL(photoRef);
+        if (!currentPhotoUrls.includes(photoUrl)) {
+          await deleteObject(photoRef);
+        }
+      }
+    };
+
+    const handleFileChange = async (
+      event: React.ChangeEvent<HTMLInputElement>,
+      setFieldValue: (field: string, value: any) => void
+    ) => {
+      const files = Array.from(event.currentTarget.files ?? []);
+
+      if (localPhotos.length + files.length > MAX_PHOTOS) {
+        setErrorModalContent(
+          `You can only upload a maximum of ${MAX_PHOTOS} photos.`
+        );
+        setShowErrorModal(true);
+        return;
+      }
+
+      setIsModerating(true);
+      const newLocalPhotos = [...localPhotos];
+
+      for (const file of files) {
+        if (file.size > MAX_FILE_SIZE) {
+          setErrorModalContent(
+            `File ${file.name} exceeds the maximum size of ${
+              MAX_FILE_SIZE / (1024 * 1024)
+            }MB.`
+          );
+          setShowErrorModal(true);
+          continue;
+        }
+
+        setModerationStatus(
+          `Moderating image ${newLocalPhotos.length + 1} of ${files.length}...`
+        );
+        const moderationResult: ModerationResult = await moderateImage(file);
+
+        if (moderationResult.isApproved) {
+          newLocalPhotos.push(file);
+        } else {
+          setErrorModalContent(
+            `Image ${file.name} failed moderation and was not added.`
+          );
+          setShowErrorModal(true);
+        }
+      }
+
+      setLocalPhotos(newLocalPhotos);
+      setFieldValue('photos', newLocalPhotos);
+
+      setIsModerating(false);
+      setModerationStatus('');
+      event.target.value = '';
+    };
+
+    const removePhoto = (index: number) => {
+      const newLocalPhotos = localPhotos.filter((_, i) => i !== index);
+      setLocalPhotos(newLocalPhotos);
+      formikRef.current?.setFieldValue('photos', newLocalPhotos);
+    };
+
     const handleSubmit = async (values: PhotosFormValues) => {
       try {
         setIsUploading(true);
-        setModerationStatus('Uploading approved images...');
-
-        if (values.photos.length === 0) {
-          throw new Error('No photos selected');
-        }
+        setModerationStatus('Processing photos...');
 
         const uploadedUrls = await Promise.all(
-          values.photos.map(uploadToFirebase)
+          localPhotos.map(async (photo) => {
+            if (typeof photo === 'string') {
+              return photo; // Already a URL, no need to upload
+            } else {
+              return await uploadToFirebase(photo);
+            }
+          })
         );
+
+        await deleteUnusedPhotos(uploadedUrls);
 
         const nextStage = getNextOnboardingStage(userData!.onboardingStage);
         if (nextStage !== null) {
@@ -161,9 +204,9 @@ const PhotosForm = forwardRef<PhotosFormRef, PhotosFormProps>(
           throw new Error('Unable to determine next onboarding stage');
         }
       } catch (error) {
-        console.error('Error uploading photos:', error);
+        console.error('Error processing photos:', error);
         setErrorModalContent(
-          'An error occurred while uploading your photos. Please [contact support](/contact) for assistance.'
+          'An error occurred while processing your photos. Please [contact support](/contact) for assistance.'
         );
         setShowErrorModal(true);
       } finally {
@@ -172,78 +215,19 @@ const PhotosForm = forwardRef<PhotosFormRef, PhotosFormProps>(
       }
     };
 
-    const handleFileChange = async (
-      event: React.ChangeEvent<HTMLInputElement>,
-      setFieldValue: (field: string, value: any) => void
+    const handleCloseSnackbar = (
+      event: React.SyntheticEvent | Event,
+      reason?: string
     ) => {
-      const files = Array.from(event.currentTarget.files ?? []);
-      const currentPhotos = formikRef.current?.values.photos || [];
-
-      setIsModerating(true);
-      const moderatedPhotos = [];
-      const newPreviewUrls = [...previewUrls];
-      let failedModerationCount = 0;
-      let exceedMaxCount = 0;
-
-      for (let i = 0; i < files.length; i++) {
-        if (currentPhotos.length + moderatedPhotos.length >= MAX_PHOTOS) {
-          exceedMaxCount++;
-          continue;
-        }
-
-        const file = files[i];
-        setModerationStatus(`Moderating image ${i + 1} of ${files.length}...`);
-        const moderationResult: ModerationResult = await moderateImage(file);
-
-        if (moderationResult.isApproved) {
-          moderatedPhotos.push(file);
-          newPreviewUrls.push(URL.createObjectURL(file));
-        } else {
-          failedModerationCount++;
-        }
+      if (reason === 'clickaway') {
+        return;
       }
-
-      const newPhotos = [...currentPhotos, ...moderatedPhotos];
-
-      setFieldValue('photos', newPhotos);
-      setPreviewUrls(newPreviewUrls);
-
-      setModerationStatus('');
-      setIsModerating(false);
-
-      if (exceedMaxCount > 0) {
-        setExceedsMaxPhotos(true);
-        setShowSnackbar(true);
-      }
-
-      if (failedModerationCount > 0) {
-        setErrorModalContent(
-          `Google's AI content moderation service considered ${failedModerationCount} image(s)
-to be potentially inappropriate and have been rejected. Please try again with less controversial
-images. 
-
-Fine tuning the automated content moderation is challenging. If you believe that we have got the
-balance wrong, please [let us know.](/contact)`
-        );
-        setShowErrorModal(true);
-      }
-      // Clear the file input
-      event.target.value = '';
+      setShowSnackbar(false);
     };
 
-    const removePhoto = (
-      index: number,
-      setFieldValue: (field: string, value: any) => void
+    const renderErrors = (
+      errors: string | string[] | FormikErrors<string>[]
     ) => {
-      const currentPhotos = formikRef.current?.values.photos || [];
-      const newPhotos = currentPhotos.filter((_, i) => i !== index);
-      setFieldValue('photos', newPhotos);
-
-      const newPreviewUrls = previewUrls.filter((_, i) => i !== index);
-      setPreviewUrls(newPreviewUrls);
-    };
-
-    const renderErrors = (errors: string | string[] | FormikErrors<File>[]) => {
       if (typeof errors === 'string') {
         return <Typography color='error'>{errors}</Typography>;
       }
@@ -309,7 +293,7 @@ with the community to help illustrate who you are.  Then select one of them to b
                       {isModerating
                         ? 'Moderating...'
                         : values.photos.length === 0
-                        ? 'Choose Photos'
+                        ? 'Choose Photos (Optional)'
                         : 'Add More Photos'}
                     </Button>
                   </Box>
@@ -320,15 +304,13 @@ with the community to help illustrate who you are.  Then select one of them to b
                     <DBCMarkdown text={moderationStatus} />
                   </Box>
                 )}
-                {previewUrls.length > 0 && (
+                {localPhotos.length > 0 && (
                   <Box
                     sx={{
-                      mt: 2,
-                      mb: 2,
+                      pt: 2,
                       height: 300,
                       maxWidth: 300,
-                      borderWidth: 1,
-                      borderColor: 'blue',
+                      margin: 'auto',
                     }}
                   >
                     <Swiper
@@ -354,8 +336,10 @@ with the community to help illustrate who you are.  Then select one of them to b
                         lastSlideMessage: 'This is the last photo',
                       }}
                     >
-                      {previewUrls.map((url, index) => (
-                        <SwiperSlide key={index}>
+                      {localPhotos.map((photo, index) => (
+                        <SwiperSlide
+                          key={typeof photo === 'string' ? photo : index}
+                        >
                           <Box
                             sx={{
                               position: 'relative',
@@ -367,16 +351,21 @@ with the community to help illustrate who you are.  Then select one of them to b
                             }}
                           >
                             <Image
-                              src={url}
+                              src={
+                                typeof photo === 'string'
+                                  ? photo
+                                  : URL.createObjectURL(photo)
+                              }
                               alt={`Preview ${index + 1}`}
-                              layout='fill'
+                              fill
                               objectFit='contain'
+                              priority={true}
                             />
                             <IconButton
-                              onClick={() => removePhoto(index, setFieldValue)}
+                              onClick={() => removePhoto(index)}
                               sx={{
                                 position: 'absolute',
-                                top: 8,
+                                bottom: 8,
                                 right: 8,
                                 backgroundColor: 'rgba(0, 0, 0, 0.5)',
                                 color: 'white',

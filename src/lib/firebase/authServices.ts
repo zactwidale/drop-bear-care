@@ -10,7 +10,7 @@ import {
   createUserWithEmailAndPassword,
   signInWithRedirect,
   getRedirectResult,
-  signInWithPopup,
+  type UserCredential,
 } from 'firebase/auth';
 import { auth } from '@/lib/firebase/config';
 
@@ -37,11 +37,10 @@ export const signIn = async (
   let provider: Provider;
   switch (providerName) {
     case 'google':
-      provider = new GoogleAuthProvider();
-      // provider = addScopesToProvider(new GoogleAuthProvider(), [
-      //   'email',
-      //   'profile',
-      // ]);
+      provider = addScopesToProvider(new GoogleAuthProvider(), [
+        'email',
+        'profile',
+      ]);
       break;
     case 'facebook':
       provider = addScopesToProvider(new FacebookAuthProvider(), [
@@ -74,39 +73,23 @@ export const signIn = async (
   await signInWithRedirect(auth, provider);
 };
 
-export const handleRedirectResult = async () => {
-  try {
-    const result = await getRedirectResult(auth);
-    if (result) {
-      const user = result.user;
-      const additionalUserInfo = (result as any).additionalUserInfo;
-      const profile = additionalUserInfo?.profile || {};
-      const firstName = profile.given_name || profile.first_name || '';
-      const lastName = profile.family_name || profile.last_name || '';
-      return {
-        user,
-        additionalInfo: {
-          firstName,
-          lastName,
-        },
-      };
-    } else {
-      // Check if there's a current user
-      const currentUser = auth.currentUser;
-      return null;
-    }
-  } catch (error) {
-    console.error('Error handling redirect result:', error);
-    // Log more details about the error
-    if (error instanceof Error) {
-      console.error('Error name:', error.name);
-      console.error('Error message:', error.message);
-      console.error('Error stack:', error.stack);
-    }
-    throw error;
-  }
-};
+interface ExtendedUserCredential extends UserCredential {
+  _tokenResponse?: {
+    firstName?: string;
+    lastName?: string;
+  };
+}
 
+export const handleRedirectResult =
+  async (): Promise<ExtendedUserCredential | null> => {
+    try {
+      const result = (await getRedirectResult(auth)) as ExtendedUserCredential;
+      return result;
+    } catch (error) {
+      console.error('Error handling redirect result:', error);
+      throw error;
+    }
+  };
 export const signOut = async () => {
   try {
     await firebaseSignOut(auth);

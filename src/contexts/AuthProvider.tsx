@@ -90,18 +90,41 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       }
       setLoading(false);
     });
+
     authServices
       .handleRedirectResult()
       .then((result) => {
-        if (result) {
-          // Handle any additional actions after successful sign-in
+        if (result && result.user) {
+          handleNewUserRegistration(result.user, result._tokenResponse);
         }
       })
       .catch((error) => {
         console.error('Error handling redirect result:', error);
       });
+
     return () => unsubscribe();
   }, []);
+
+  const handleNewUserRegistration = async (user: User, tokenResponse?: any) => {
+    const userRef = doc(db, 'users', user.uid);
+    const userSnap = await getDoc(userRef);
+
+    if (!userSnap.exists()) {
+      // This is a new user, create a new document with social login info
+      const newUserData: UserData = {
+        uid: user.uid,
+        firstName: tokenResponse?.firstName || '',
+        lastName: tokenResponse?.lastName || '',
+        photoURL: user.photoURL || '',
+        createdAt: new Date().toISOString(),
+        onboardingStage: OnboardingStage.MembershipType,
+        // ... (other fields as needed)
+      };
+      await setDoc(userRef, newUserData);
+      setUserData(newUserData);
+    }
+    // If the user already exists, we don't update any information
+  };
 
   const fetchOrCreateUserDoc = async (user: User) => {
     const userRef = doc(db, 'users', user.uid);
@@ -109,6 +132,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       setLoading(true);
       const userSnap = await getDoc(userRef);
       if (!userSnap.exists()) {
+        // This is a new user, but not from a social login redirect
+        // Create a basic user document
         const newUserData: UserData = {
           uid: user.uid,
           firstName: '',
@@ -118,14 +143,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
           onboardingStage: user.emailVerified
             ? OnboardingStage.MembershipType
             : OnboardingStage.EmailVerification,
+          // ... (other fields as needed)
         };
         await setDoc(userRef, newUserData);
         setUserData(newUserData);
       } else {
+        // Existing user, just load their data
         setUserData(userSnap.data() as UserData);
       }
     } catch (error) {
-      //TODO - log error to sentry
       console.error('Error in fetchOrCreateUserDoc:', error);
       throw error;
     } finally {

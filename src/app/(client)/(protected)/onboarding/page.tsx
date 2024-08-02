@@ -34,7 +34,14 @@ import PersonalDetailsForm, {
   type PersonalDetailsFormRef,
 } from './_components/PersonalDetailsForm';
 import PhotosForm, { type PhotosFormRef } from './_components/PhotosForm';
-import AvailabilityForm from './_components/AvailabilityForm';
+import LocationForm, { type LocationFormRef } from './_components/LocationForm';
+import AvailabilityForm, {
+  type AvailabilityFormRef,
+} from './_components/AvailabilityForm';
+import LanguagesForm, {
+  type LanguagesFormRef,
+} from './_components/LanguagesForm';
+import WelcomeForm, { type WelcomeFormRef } from './_components/WelcomeForm';
 import LoadingPage from '@/components/LoadingPage';
 
 const logoutConfirmation = `
@@ -55,7 +62,10 @@ const Onboarding = () => {
   const personalDetailsFormRef = useRef<PersonalDetailsFormRef>(null);
   const bioFormRef = useRef<BioFormRef>(null);
   const photosFormRef = useRef<PhotosFormRef>(null);
-  const availabilityFormRef = useRef<PersonalDetailsFormRef>(null);
+  const locationFormRef = useRef<LocationFormRef>(null);
+  const availabilityFormRef = useRef<AvailabilityFormRef>(null);
+  const languagesFormRef = useRef<LanguagesFormRef>(null);
+  const welcomeFormRef = useRef<WelcomeFormRef>(null);
   const [isProcessing, setIsProcessing] = useState(false);
 
   if (!userData) {
@@ -111,10 +121,25 @@ const Onboarding = () => {
         ) {
           await photosFormRef.current.submitForm();
         } else if (
+          userData.onboardingStage === OnboardingStage.Location &&
+          locationFormRef.current
+        ) {
+          await locationFormRef.current.submitForm();
+        } else if (
           userData.onboardingStage === OnboardingStage.Availability &&
           availabilityFormRef.current
         ) {
           await availabilityFormRef.current.submitForm();
+        } else if (
+          userData.onboardingStage === OnboardingStage.Languages &&
+          languagesFormRef.current
+        ) {
+          await languagesFormRef.current.submitForm();
+        } else if (
+          userData.onboardingStage === OnboardingStage.Welcome &&
+          welcomeFormRef.current
+        ) {
+          await welcomeFormRef.current.submitForm();
         } else {
           const nextStage = getNextOnboardingStage(userData.onboardingStage);
           if (nextStage !== null) {
@@ -182,10 +207,34 @@ const Onboarding = () => {
             setIsProcessing={setIsProcessing}
           />
         );
+      case OnboardingStage.Location:
+        return (
+          <LocationForm
+            ref={locationFormRef}
+            onSubmit={handleNext}
+            disabled={isProcessing}
+          />
+        );
       case OnboardingStage.Availability:
         return (
           <AvailabilityForm
             ref={availabilityFormRef}
+            onSubmit={handleNext}
+            disabled={isProcessing}
+          />
+        );
+      case OnboardingStage.Languages:
+        return (
+          <LanguagesForm
+            ref={languagesFormRef}
+            onSubmit={handleNext}
+            disabled={isProcessing}
+          />
+        );
+      case OnboardingStage.Welcome:
+        return (
+          <WelcomeForm
+            ref={welcomeFormRef}
             onSubmit={handleNext}
             disabled={isProcessing}
           />
@@ -205,9 +254,19 @@ const Onboarding = () => {
         rightButton={logoutButton}
       />
       <Paper>
-        <DBCMarkdown
-          text={`## ${getOnboardingStageName(userData!.onboardingStage)}`}
-        />
+        {userData!.onboardingStage ===
+        OnboardingStage.Welcome ? null : userData!.onboardingStage ===
+          OnboardingStage.Availability ? (
+          userData!.membershipType === 'provider' ? (
+            <DBCMarkdown text={`## Availability`} />
+          ) : (
+            <DBCMarkdown text={`## Hours of Need`} />
+          )
+        ) : (
+          <DBCMarkdown
+            text={`## ${getOnboardingStageName(userData!.onboardingStage)}`}
+          />
+        )}
         {onboardingStageComponent()}
         <OnboardingStepper
           activeStep={userData!.onboardingStage}

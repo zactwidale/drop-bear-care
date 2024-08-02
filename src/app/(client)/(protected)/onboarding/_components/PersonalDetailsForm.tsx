@@ -7,7 +7,6 @@ import React, {
 import { Formik, Form, Field, type FormikProps } from 'formik';
 import * as Yup from 'yup';
 import {
-  TextField,
   Box,
   FormControlLabel,
   Checkbox,
@@ -28,23 +27,45 @@ import { getNextOnboardingStage } from '@/types/onboarding';
 import DBCLink from '@/components/DBCLink';
 import InfoModal from '@/components/InfoModal';
 import TextFieldWithError from '@/components/TextFieldWithError';
+import { Timestamp } from 'firebase/firestore';
 
 interface PersonalDetailsFormValues {
   firstName: string;
   lastName: string;
   preferredName: string;
-  dateOfBirth: Dayjs | null;
+  dateOfBirth: Timestamp | null;
   hideAge: boolean;
   gender: Gender | '';
 }
+
+const isTimestamp = (value: any): value is Timestamp => {
+  return value instanceof Timestamp;
+};
 
 const validationSchema = Yup.object().shape({
   firstName: Yup.string().required('First name is required'),
   lastName: Yup.string().required('Last name is required'),
   preferredName: Yup.string(),
-  dateOfBirth: Yup.date()
+  dateOfBirth: Yup.mixed()
+    .nullable()
     .required('Date of birth is required')
-    .max(new Date(), 'Date of birth cannot be in the future'),
+    .test('is-date', 'Invalid date', (value) => {
+      if (!value) return false;
+      if (isTimestamp(value)) {
+        return true;
+      }
+      if (typeof value === 'string') {
+        return dayjs(value, 'YYYY-MM-DD', true).isValid();
+      }
+      return false;
+    })
+    .test('not-future', 'Date of birth cannot be in the future', (value) => {
+      if (!value) return true;
+      const date = isTimestamp(value)
+        ? value.toDate()
+        : dayjs(value as string).toDate();
+      return date <= new Date();
+    }),
   hideAge: Yup.boolean(),
   gender: Yup.mixed<Gender>()
     .oneOf(
@@ -67,7 +88,7 @@ const PersonalDetailsForm = forwardRef<
   PersonalDetailsFormRef,
   PersonalDetailsFormProps
 >(({ onSubmit, disabled = false }, ref) => {
-  const { userData, updateUserData } = useAuth();
+  const { userData, updateUserData, generateUniqueDisplayName } = useAuth();
   const formikRef = useRef<FormikProps<PersonalDetailsFormValues>>(null);
   const [hasSubmitted, setHasSubmitted] = useState(false);
   const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
@@ -81,18 +102,49 @@ const PersonalDetailsForm = forwardRef<
     },
   }));
 
+  const calculateAgeRange = (dateOfBirth: Timestamp): string => {
+    const today = dayjs();
+    const birthDate = dayjs(dateOfBirth.toDate());
+    const age = today.diff(birthDate, 'year');
+
+    const lowerBound = Math.floor(age / 5) * 5;
+    const upperBound = lowerBound + 4;
+
+    return `${lowerBound}-${upperBound}`;
+  };
+
   const handleSubmit = async (values: PersonalDetailsFormValues) => {
     try {
       const nextStage = getNextOnboardingStage(userData!.onboardingStage);
       if (nextStage !== null) {
+        let dateOfBirth: Timestamp | null = null;
+        let ageRange: string = 'hidden';
+
+        if (values.dateOfBirth) {
+          dateOfBirth = isTimestamp(values.dateOfBirth)
+            ? values.dateOfBirth
+            : Timestamp.fromDate(dayjs(values.dateOfBirth).toDate());
+
+          ageRange = values.hideAge ? 'hidden' : calculateAgeRange(dateOfBirth);
+        }
+
+        const displayName = await generateUniqueDisplayName(
+          userData!.uid,
+          values.firstName,
+          values.lastName,
+          values.preferredName
+        );
+
         await updateUserData({
           firstName: values.firstName,
           lastName: values.lastName,
           preferredName: values.preferredName,
-          dateOfBirth: values.dateOfBirth?.toDate(),
+          dateOfBirth: dateOfBirth!,
           hideAge: values.hideAge,
+          age: ageRange,
           gender: values.gender as Gender,
           onboardingStage: nextStage,
+          displayName: displayName,
         });
         onSubmit();
       } else {
@@ -165,6 +217,14 @@ ${commonMessage}`;
     }
   };
 
+  const timestampToDayjs = (timestamp: Timestamp | null): Dayjs | null => {
+    return timestamp ? dayjs(timestamp.toDate()) : null;
+  };
+
+  const dayjsToTimestamp = (date: Dayjs | null): Timestamp | null => {
+    return date ? Timestamp.fromDate(date.toDate()) : null;
+  };
+
   return (
     <LocalizationProvider dateAdapter={AdapterDayjs}>
       <Box sx={{ width: '100%', maxWidth: 600, margin: 'auto' }}>
@@ -184,14 +244,13 @@ ${commonMessage}`;
             firstName: userData?.firstName || '',
             lastName: userData?.lastName || '',
             preferredName: userData?.preferredName || '',
-            dateOfBirth: userData?.dateOfBirth
-              ? dayjs(userData.dateOfBirth)
-              : null,
+            dateOfBirth: userData?.dateOfBirth || null,
             hideAge: userData?.hideAge || false,
             gender: userData?.gender || '',
           }}
           validationSchema={validationSchema}
           onSubmit={handleSubmit}
+          enableReinitialize
         >
           {({ errors, setFieldValue, values }) => (
             <Form noValidate>
@@ -222,10 +281,10 @@ ${commonMessage}`;
                 />
                 <DatePicker
                   label='Date of Birth *'
-                  value={values.dateOfBirth}
-                  onChange={(date: Dayjs | null) =>
-                    setFieldValue('dateOfBirth', date)
-                  }
+                  value={timestampToDayjs(values.dateOfBirth)}
+                  onChange={(date: Dayjs | null) => {
+                    setFieldValue('dateOfBirth', dayjsToTimestamp(date));
+                  }}
                   format='DD/MM/YYYY'
                   slotProps={{
                     textField: {
@@ -351,6 +410,6 @@ ${commonMessage}`;
   );
 });
 
-PersonalDetailsForm.displayName = 'BasicDetailsForm';
+PersonalDetailsForm.displayName = 'PersonalDetailsForm';
 
 export default PersonalDetailsForm;

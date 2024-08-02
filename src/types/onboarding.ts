@@ -4,8 +4,11 @@ export enum OnboardingStage {
   PersonalDetails = 2,
   Bio = 3,
   Photos = 4,
-  Availability = 5,
-  Complete = 6,
+  Location = 5,
+  Availability = 6,
+  Languages = 7,
+  Welcome = 8,
+  Complete = 9,
 }
 export const OnboardingStageNames: { [key in OnboardingStage]: string } = {
   [OnboardingStage.EmailVerification]: 'Email Verification',
@@ -13,7 +16,10 @@ export const OnboardingStageNames: { [key in OnboardingStage]: string } = {
   [OnboardingStage.PersonalDetails]: 'Personal Details',
   [OnboardingStage.Bio]: 'Bio',
   [OnboardingStage.Photos]: 'Photos',
+  [OnboardingStage.Location]: 'Location',
   [OnboardingStage.Availability]: 'Availability',
+  [OnboardingStage.Languages]: 'Languages',
+  [OnboardingStage.Welcome]: 'Welcome',
   [OnboardingStage.Complete]: 'Complete',
 };
 

@@ -1,11 +1,26 @@
 'use client';
 
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useState,
+} from 'react';
 import { User, onAuthStateChanged } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase/config';
-import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
+import {
+  doc,
+  getDoc,
+  runTransaction,
+  setDoc,
+  updateDoc,
+  Timestamp,
+} from 'firebase/firestore';
 import * as authServices from '@/lib/firebase/authServices';
 import { OnboardingStage } from '@/types/onboarding';
+import { generateAndUploadRandomAvatar } from '@/utils/avatarGenerator';
+import { getDownloadURL, getStorage, ref, uploadBytes } from 'firebase/storage';
 
 export type Gender = 'male' | 'female' | 'other' | 'prefer not to say';
 
@@ -36,16 +51,32 @@ export type TimeFormat = '12' | '24';
 
 export type Availability = AvailabilitySlot[];
 
+export type LanguageLevel =
+  | 'native'
+  | 'fluent'
+  | 'advanced'
+  | 'intermediate'
+  | 'beginner';
+
+export interface Language {
+  language: string;
+  level: LanguageLevel;
+}
+
+export type Languages = Language[];
+
 export interface UserData {
   uid: string;
   firstName: string;
   lastName: string;
+  displayName: string;
   photoURL: string;
-  createdAt: string;
+  createdAt: Timestamp;
   onboardingStage: OnboardingStage;
   membershipType?: 'provider' | 'seeker';
   preferredName?: string;
-  dateOfBirth?: Date;
+  dateOfBirth?: Timestamp;
+  age?: string;
   hideAge?: boolean;
   gender?: Gender;
   bio?: string;
@@ -53,12 +84,19 @@ export interface UserData {
   location?: Suburb;
   timeFormatPreference?: TimeFormat;
   availability?: Availability;
+  languages?: Languages;
 }
 
 export interface AuthContextProps {
   user: User | null;
   userData: UserData | null;
   loading: boolean;
+  generateUniqueDisplayName: (
+    userId: string,
+    firstName: string,
+    lastName: string,
+    preferredName?: string
+  ) => Promise<string>;
   updateUserData: (updates: Partial<UserData>) => Promise<void>;
   createAccount: (email: string, password: string) => Promise<void>;
   signIn: (
@@ -79,6 +117,46 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const [user, setUser] = useState<User | null>(null);
   const [userData, setUserData] = useState<UserData | null>(null);
   const [loading, setLoading] = useState(true);
+
+  const handleNewUserRegistration = useCallback(
+    async (user: User, tokenResponse?: any) => {
+      const userRef = doc(db, 'users', user.uid);
+      const userSnap = await getDoc(userRef);
+
+      if (!userSnap.exists()) {
+        let photoURL = user.photoURL || '';
+
+        if (!photoURL) {
+          try {
+            photoURL = await generateAndUploadRandomAvatar(user.uid);
+          } catch (error) {
+            console.error('Error generating default avatar:', error);
+            photoURL = '/path/to/default-avatar.png';
+          }
+        } else {
+          try {
+            photoURL = await uploadProviderPhotoToStorage(user.uid, photoURL);
+          } catch (error) {
+            console.error('Error uploading provider photo:', error);
+            photoURL = await generateAndUploadRandomAvatar(user.uid);
+          }
+        }
+
+        const newUserData: UserData = {
+          uid: user.uid,
+          firstName: tokenResponse?.firstName || '',
+          lastName: tokenResponse?.lastName || '',
+          displayName: '',
+          photoURL: photoURL,
+          createdAt: Timestamp.fromMillis(Date.now()),
+          onboardingStage: OnboardingStage.MembershipType,
+        };
+        await setDoc(userRef, newUserData);
+        setUserData(newUserData);
+      }
+    },
+    []
+  );
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
@@ -103,27 +181,70 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       });
 
     return () => unsubscribe();
-  }, []);
+  }, [handleNewUserRegistration]);
 
-  const handleNewUserRegistration = async (user: User, tokenResponse?: any) => {
-    const userRef = doc(db, 'users', user.uid);
-    const userSnap = await getDoc(userRef);
+  const generateUniqueDisplayName = async (
+    userId: string,
+    firstName: string,
+    lastName: string,
+    preferredName?: string
+  ): Promise<string> => {
+    const newBaseName = `${preferredName || firstName} ${lastName.charAt(0)}`;
 
-    if (!userSnap.exists()) {
-      // This is a new user, create a new document with social login info
-      const newUserData: UserData = {
-        uid: user.uid,
-        firstName: tokenResponse?.firstName || '',
-        lastName: tokenResponse?.lastName || '',
-        photoURL: user.photoURL || '',
-        createdAt: new Date().toISOString(),
-        onboardingStage: OnboardingStage.MembershipType,
-        // ... (other fields as needed)
-      };
-      await setDoc(userRef, newUserData);
-      setUserData(newUserData);
-    }
-    // If the user already exists, we don't update any information
+    return await runTransaction(db, async (transaction) => {
+      const userRef = doc(db, 'users', userId);
+      const userDoc = await transaction.get(userRef);
+      const userData = userDoc.data();
+
+      // Check if user already has a valid display name
+      if (
+        userData &&
+        userData.displayName &&
+        userData.displayName.startsWith(newBaseName)
+      ) {
+        return userData.displayName;
+      }
+
+      const displayNameRef = doc(db, 'displayNames', newBaseName);
+      const displayNameDoc = await transaction.get(displayNameRef);
+
+      let finalDisplayName: string;
+
+      if (!displayNameDoc.exists()) {
+        finalDisplayName = newBaseName;
+        transaction.set(displayNameRef, { count: 1 });
+      } else {
+        const data = displayNameDoc.data();
+        const newCount = (data.count || 0) + 1;
+        finalDisplayName = `${newBaseName}-${newCount}`;
+        transaction.update(displayNameRef, { count: newCount });
+      }
+
+      // Update user document with the new display name
+      // NOTE: I would have preferred to do the update in the calling function,
+      // but this is often triggered twice in quick succession, creating unfavorable race conditions.
+      // Doing it here was a pragmatic compromise.
+      transaction.update(userRef, { displayName: finalDisplayName });
+
+      return finalDisplayName;
+    });
+  };
+
+  const uploadProviderPhotoToStorage = async (
+    userId: string,
+    photoURL: string
+  ): Promise<string> => {
+    // Fetch the image
+    const response = await fetch(photoURL);
+    const blob = await response.blob();
+
+    // Upload to Firebase Storage
+    const storage = getStorage();
+    const photoRef = ref(storage, `user-photos/${userId}/profile-photo.jpg`);
+    await uploadBytes(photoRef, blob);
+
+    // Get the download URL
+    return await getDownloadURL(photoRef);
   };
 
   const fetchOrCreateUserDoc = async (user: User) => {
@@ -132,14 +253,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       setLoading(true);
       const userSnap = await getDoc(userRef);
       if (!userSnap.exists()) {
-        // This is a new user, but not from a social login redirect
-        // Create a basic user document
+        let photoURL = user.photoURL || '';
+
+        if (!photoURL) {
+          // Generate and upload default avatar if no photo URL is provided
+          try {
+            photoURL = await generateAndUploadRandomAvatar(user.uid);
+          } catch (error) {
+            console.error('Error generating default avatar:', error);
+          }
+        }
+
         const newUserData: UserData = {
           uid: user.uid,
           firstName: '',
           lastName: '',
-          photoURL: user.photoURL || '',
-          createdAt: new Date().toISOString(),
+          displayName: '',
+          photoURL: photoURL,
+          createdAt: Timestamp.fromMillis(Date.now()),
           onboardingStage: user.emailVerified
             ? OnboardingStage.MembershipType
             : OnboardingStage.EmailVerification,
@@ -232,6 +363,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     user,
     userData,
     loading,
+    generateUniqueDisplayName,
     updateUserData,
     createAccount,
     signIn,

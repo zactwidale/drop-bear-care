@@ -8,6 +8,7 @@ import {
   Paper,
 } from '@mui/material';
 import type { Suburb } from '@/contexts/AuthProvider';
+import suburbsData from '@/assets/suburbs.json';
 
 interface SuburbSelectorProps {
   onSuburbSelected: (suburb: Suburb | null) => void;
@@ -26,18 +27,8 @@ const SuburbSelector: React.FC<SuburbSelectorProps> = ({
   );
 
   useEffect(() => {
-    const fetchSuburbs = async () => {
-      try {
-        const response = await fetch('/suburbs.json');
-        const data = await response.json();
-        setSuburbs(data);
-        setLoading(false);
-      } catch (error) {
-        console.error('Error fetching suburbs:', error);
-        setLoading(false);
-      }
-    };
-    fetchSuburbs();
+    setSuburbs(suburbsData);
+    setLoading(false);
   }, []);
 
   const filterOptions = useCallback(

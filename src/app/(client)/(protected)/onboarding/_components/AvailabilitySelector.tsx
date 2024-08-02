@@ -3,8 +3,6 @@ import {
   Box,
   List,
   ListItem,
-  ListItemText,
-  ListItemSecondaryAction,
   IconButton,
   Fab,
   Dialog,
@@ -24,6 +22,7 @@ import {
   styled,
 } from '@mui/material';
 import { TimePicker } from '@mui/x-date-pickers/TimePicker';
+import { DesktopTimePicker } from '@mui/x-date-pickers/DesktopTimePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { Add as AddIcon, Delete as DeleteIcon } from '@mui/icons-material';
@@ -38,6 +37,10 @@ import type {
   Day,
   TimeFormat,
 } from '@/contexts/AuthProvider';
+
+//TODO - lots of work on styling required here - beware of changing layout affecting the
+// function of the switch and delete buttons - strange interplay happening.
+// also need to modify theme style of paper in order to not mess up the timepicker styling.
 
 interface AvailabilitySelectorProps {
   availability: Availability | null;
@@ -320,174 +323,168 @@ const AvailabilitySelector: React.FC<AvailabilitySelectorProps> = ({
 
   return (
     <LocalizationProvider dateAdapter={AdapterDayjs}>
-      <Paper
-        elevation={3}
+      <FormControlLabel
+        control={
+          <Switch
+            checked={safeTimeFormatPreference === '12'}
+            onChange={handleTimeFormatChange}
+            name='timeFormat'
+          />
+        }
+        label={safeTimeFormatPreference === '12' ? '12-hour' : '24-hour'}
+        style={{
+          margin: 0,
+          padding: 0,
+          display: 'flex',
+          justifyContent: 'flex-end',
+        }}
+      />
+      <Box
         sx={{
-          padding: 3,
-          height: '100%',
+          flex: 1,
           display: 'flex',
           flexDirection: 'column',
+          justifyContent: 'center',
+          ml: 2,
         }}
       >
-        <Box
-          display='flex'
-          justifyContent='space-between'
-          alignItems='center'
-          mb={2}
-        >
-          <Typography variant='h6'>Availability</Typography>
-          <FormControlLabel
-            control={
-              <Switch
-                checked={safeTimeFormatPreference === '12'}
-                onChange={handleTimeFormatChange}
-                name='timeFormat'
-              />
-            }
-            label={safeTimeFormatPreference === '12' ? '12-hour' : '24-hour'}
-          />
-        </Box>
-        <Box
-          sx={{
-            flex: 1,
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'center',
-            ml: 5,
-          }}
-        >
-          <List sx={{ width: '100%', maxWidth: 600 }}>
-            {Object.entries(
-              groupSlotsByDay(sortAvailabilitySlots(safeAvailability))
-            ).map(([day, slots]) => (
-              <ListItem key={day} sx={{ py: 1, px: 0 }}>
-                <Grid container spacing={2} alignItems='flex-start'>
-                  <Grid item xs={3}>
-                    <Typography
-                      variant='subtitle1'
-                      sx={{ fontWeight: 'bold', lineHeight: 1.75 }}
-                    >
-                      {day}
-                    </Typography>
-                  </Grid>
-                  <Grid item xs={9}>
-                    {slots.length > 0 ? (
-                      slots.map((slot, index) => (
-                        <Box
-                          key={slot.id}
-                          sx={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            mb: index !== slots.length - 1 ? 1 : 0,
-                          }}
-                        >
-                          <Typography sx={{ lineHeight: 1.75 }}>
-                            {formatTime(slot.startTime)} -{' '}
-                            {formatTime(slot.endTime)}
-                          </Typography>
-                          <IconButton
-                            edge='end'
-                            aria-label='delete'
-                            onClick={() => handleDelete(slot)}
-                            size='small'
-                            sx={{ ml: 1 }}
-                          >
-                            <DeleteIcon fontSize='small' />
-                          </IconButton>
-                        </Box>
-                      ))
-                    ) : (
-                      <Typography
-                        sx={{ color: 'text.secondary', lineHeight: 1.75 }}
-                      >
-                        ---------------------
-                      </Typography>
-                    )}
-                  </Grid>
-                </Grid>
-              </ListItem>
-            ))}
-          </List>
-        </Box>
-        <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: -2 }}>
-          <Fab
-            color='primary'
-            aria-label='add'
-            onClick={() => setIsDialogOpen(true)}
-          >
-            <AddIcon />
-          </Fab>
-        </Box>
-        <Dialog open={isDialogOpen} onClose={handleDialogClose}>
-          <DialogTitle>Add New Availability Slot</DialogTitle>
-          <DialogContent>
-            <Grid container spacing={2}>
-              <Grid item xs={12}>
-                <StyledFormControl fullWidth margin='normal'>
-                  <InputLabel id='day-select-label'>Day</InputLabel>
-                  <Select
-                    labelId='day-select-label'
-                    value={newSlot.dayOption}
-                    onChange={(e) =>
-                      setNewSlot({
-                        ...newSlot,
-                        dayOption: e.target.value as DayOption,
-                      })
-                    }
-                    fullWidth
+        <List sx={{ width: '100%', maxWidth: 600 }}>
+          {Object.entries(
+            groupSlotsByDay(sortAvailabilitySlots(safeAvailability))
+          ).map(([day, slots]) => (
+            <ListItem key={day} sx={{ py: 1, px: 0 }}>
+              <Grid container spacing={2} alignItems='flex-start' wrap='nowrap'>
+                <Grid item xs={3}>
+                  <Typography
+                    variant='subtitle1'
+                    sx={{ fontWeight: 'bold', lineHeight: 1.75 }}
                   >
-                    {allOptions.map((option) => (
-                      <MenuItem key={option} value={option}>
-                        {option}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </StyledFormControl>
+                    {day}
+                  </Typography>
+                </Grid>
+                <Grid item xs={9}>
+                  {slots.length > 0 ? (
+                    slots.map((slot, index) => (
+                      <Box
+                        key={slot.id}
+                        sx={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          mb: index !== slots.length - 1 ? 1 : 0,
+                        }}
+                      >
+                        <Typography sx={{ lineHeight: 1.75 }}>
+                          {formatTime(slot.startTime)} -{' '}
+                          {formatTime(slot.endTime)}
+                        </Typography>
+                        <IconButton
+                          edge='end'
+                          aria-label='delete'
+                          onClick={() => handleDelete(slot)}
+                          size='small'
+                          sx={{ ml: 1 }}
+                        >
+                          <DeleteIcon fontSize='small' />
+                        </IconButton>
+                      </Box>
+                    ))
+                  ) : (
+                    <Typography
+                      sx={{ color: 'text.secondary', lineHeight: 1.75 }}
+                    >
+                      ---------------------
+                    </Typography>
+                  )}
+                </Grid>
               </Grid>
-              <Grid item xs={6}>
-                <TimePicker
-                  //TODO - improve styling of the drop down.
-                  label='Start Time'
-                  value={minutesToDayjs(newSlot.startTime)}
-                  onChange={(newValue) => handleTimeChange('start', newValue)}
-                  minutesStep={5}
-                  ampm={safeTimeFormatPreference === '12'}
-                />
-              </Grid>
-              <Grid item xs={6}>
-                <TimePicker
-                  label='End Time'
-                  value={minutesToDayjs(newSlot.endTime)}
-                  onChange={(newValue) => handleTimeChange('end', newValue)}
-                  minutesStep={5}
-                  ampm={safeTimeFormatPreference === '12'}
-                />
-              </Grid>
+            </ListItem>
+          ))}
+        </List>
+      </Box>
+      <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: -2 }}>
+        <Fab
+          color='primary'
+          aria-label='add'
+          onClick={() => setIsDialogOpen(true)}
+        >
+          <AddIcon />
+        </Fab>
+      </Box>
+      <Dialog open={isDialogOpen} onClose={handleDialogClose}>
+        <DialogTitle>Add New Time Slot</DialogTitle>
+        <DialogContent>
+          <Grid container spacing={2}>
+            <Grid item xs={12}>
+              <StyledFormControl fullWidth margin='normal'>
+                <InputLabel id='day-select-label'>Day</InputLabel>
+                <Select
+                  labelId='day-select-label'
+                  value={newSlot.dayOption}
+                  onChange={(e) =>
+                    setNewSlot({
+                      ...newSlot,
+                      dayOption: e.target.value as DayOption,
+                    })
+                  }
+                  fullWidth
+                >
+                  {allOptions.map((option) => (
+                    <MenuItem key={option} value={option}>
+                      {option}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </StyledFormControl>
             </Grid>
-            {error && (
-              <Typography
-                color='error'
-                variant='body2'
-                style={{ marginTop: '1rem' }}
-              >
-                {error}
-              </Typography>
-            )}
-          </DialogContent>
-          <DialogActions>
-            <Button
-              onClick={handleDialogClose}
-              color='secondary'
-              sx={{ marginRight: 'auto' }}
+            <Grid item xs={6}>
+              <DesktopTimePicker
+                //TODO - decide on type of time picker
+                label='Start Time'
+                value={minutesToDayjs(newSlot.startTime)}
+                onChange={(newValue) => handleTimeChange('start', newValue)}
+                minutesStep={5}
+                ampm={safeTimeFormatPreference === '12'}
+              />
+            </Grid>
+            <Grid item xs={6}>
+              <TimePicker
+                label='End Time'
+                value={minutesToDayjs(newSlot.endTime)}
+                onChange={(newValue) => handleTimeChange('end', newValue)}
+                minutesStep={5}
+                ampm={safeTimeFormatPreference === '12'}
+              />
+            </Grid>
+          </Grid>
+          {error && (
+            <Typography
+              color='error'
+              variant='body2'
+              style={{ marginTop: '1rem' }}
             >
-              Cancel
-            </Button>
-            <Button onClick={handleAdd} color='primary' disabled={!!error}>
-              Add
-            </Button>
-          </DialogActions>
-        </Dialog>
-      </Paper>
+              {error}
+            </Typography>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button
+            onClick={handleDialogClose}
+            color='secondary'
+            disabled={!!error}
+            sx={{ marginRight: 'auto', minWidth: 120 }}
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={handleAdd}
+            color='primary'
+            disabled={!!error}
+            sx={{ minWidth: 120 }}
+          >
+            Add
+          </Button>
+        </DialogActions>
+      </Dialog>
     </LocalizationProvider>
   );
 };

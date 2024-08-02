@@ -18,7 +18,7 @@ import {
   Avatar,
   ButtonBase,
 } from '@mui/material';
-import { useAuth } from '@/contexts/AuthProvider';
+import { useAuth, type UserData } from '@/contexts/AuthProvider';
 import { getNextOnboardingStage } from '@/types/onboarding';
 import InfoModal from '@/components/InfoModal';
 import Image from 'next/image';
@@ -262,11 +262,14 @@ const PhotosForm = forwardRef<PhotosFormRef, PhotosFormProps>(
 
         const nextStage = getNextOnboardingStage(userData!.onboardingStage);
         if (nextStage !== null) {
-          await updateUserData({
+          const updates: Partial<UserData> = {
             photoURLs: validPhotoURLs,
-            photoURL: updatedAvatarURL,
             onboardingStage: nextStage,
-          });
+            photoURL:
+              updatedAvatarURL || validPhotoURLs[0] || userData!.photoURL, // Fallback to existing photoURL if no new photos
+          };
+
+          await updateUserData(updates);
           onSubmit();
         } else {
           throw new Error('Unable to determine next onboarding stage');

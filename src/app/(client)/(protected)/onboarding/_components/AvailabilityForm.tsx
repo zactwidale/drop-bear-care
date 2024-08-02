@@ -1,26 +1,20 @@
 import { forwardRef, useImperativeHandle, useRef, useState } from 'react';
 import { Formik, Form, FormikProps } from 'formik';
 import * as Yup from 'yup';
-import { Box, FormHelperText } from '@mui/material';
+import { Box } from '@mui/material';
 import {
   useAuth,
   type Availability,
-  type Suburb,
   type TimeFormat,
 } from '@/contexts/AuthProvider';
-import SuburbSelector from './SuburbSelector';
 import { getNextOnboardingStage } from '@/types/onboarding';
 import AvailabilitySelector from './AvailabilitySelector';
+import DBCMarkdown from '@/components/DBCMarkdown';
 
 interface AvailabilityFormValues {
-  location: Suburb | null;
   availability: Availability | null;
   timeFormatPreference: TimeFormat | null;
 }
-
-const validationSchema = Yup.object().shape({
-  location: Yup.object().nullable().required('Suburb is required'),
-});
 
 interface AvailabilityFormProps {
   onSubmit: () => void;
@@ -48,22 +42,39 @@ const AvailabilityForm = forwardRef<AvailabilityFormRef, AvailabilityFormProps>(
 
     const handleSubmit = async (values: AvailabilityFormValues) => {
       try {
-        if (values.location) {
-          const nextStage = getNextOnboardingStage(userData!.onboardingStage);
+        const nextStage = getNextOnboardingStage(userData!.onboardingStage);
+        if (nextStage !== null) {
           await updateUserData({
-            location: values.location,
-            onboardingStage: nextStage!,
+            availability: values.availability || undefined,
+            timeFormatPreference: values.timeFormatPreference || undefined,
+            onboardingStage: nextStage,
           });
           onSubmit();
+        } else {
+          throw new Error('Unable to determine next onboarding stage');
         }
       } catch (error) {
-        // TODO: log to sentry
-        console.error('Error updating user data:', error);
+        console.error(
+          'Error updating availability and onboarding stage:',
+          error
+        );
+      }
+    };
+
+    const headerMessage = () => {
+      switch (userData?.membershipType) {
+        case 'provider':
+          return `Please let your prospective clients know when you are available to provide support.`;
+        case 'seeker':
+          return `If you've got a schedule of when you require support, please let prospective support workers know.`;
+        default:
+          return ``;
       }
     };
 
     return (
       <Box sx={{ width: '100%', maxWidth: 600, margin: 'auto' }}>
+        <DBCMarkdown text={headerMessage()} />
         <Formik
           innerRef={formikRef}
           initialValues={{
@@ -71,7 +82,6 @@ const AvailabilityForm = forwardRef<AvailabilityFormRef, AvailabilityFormProps>(
             availability: userData?.availability || null,
             timeFormatPreference: userData?.timeFormatPreference || null,
           }}
-          validationSchema={validationSchema}
           onSubmit={handleSubmit}
         >
           {({ errors, setFieldValue, values }) => (
@@ -80,19 +90,6 @@ const AvailabilityForm = forwardRef<AvailabilityFormRef, AvailabilityFormProps>(
                 disabled={disabled}
                 style={{ border: 'none', padding: 0, margin: 0 }}
               >
-                <Box mt={2} mb={2}>
-                  <SuburbSelector
-                    onSuburbSelected={(suburb) => {
-                      setFieldValue('location', suburb);
-                    }}
-                    initialValue={values.location}
-                  />
-                  {hasSubmitted && errors.location && (
-                    <FormHelperText error id='location-error'>
-                      {errors.location as string}
-                    </FormHelperText>
-                  )}
-                </Box>
                 <AvailabilitySelector
                   availability={values.availability}
                   timeFormatPreference={values.timeFormatPreference}

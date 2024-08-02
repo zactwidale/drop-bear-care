@@ -49,6 +49,7 @@ export const signIn = async (
       ]);
       break;
     case 'microsoft':
+      //TODO - get Microsoft user avatar - is available, but more complicated.
       provider = addScopesToProvider(new OAuthProvider('microsoft.com'), [
         'email',
         'profile',

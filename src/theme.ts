@@ -2,15 +2,12 @@
 import { Roboto } from 'next/font/google';
 import { createTheme, alpha } from '@mui/material/styles';
 import { drawerWidth } from './lib/constants';
-import { SpaceBarOutlined } from '@mui/icons-material';
 
 const roboto = Roboto({
   weight: ['300', '400', '500', '700'],
   subsets: ['latin'],
   display: 'swap',
 });
-
-// #003087
 
 const palette = {
   background: {
@@ -22,6 +19,22 @@ const palette = {
   },
   secondary: {
     main: '#009CDE',
+    contrastText: '#fff',
+  },
+  success: {
+    main: '#008000',
+    contrastText: '#fff',
+  },
+  error: {
+    main: '#f44336',
+    contrastText: '#fff',
+  },
+  warning: {
+    main: '#ff9800',
+    contrastText: '#fff',
+  },
+  info: {
+    main: '#2196f3',
     contrastText: '#fff',
   },
 };
@@ -88,29 +101,41 @@ const theme = createTheme({
         },
       },
     },
-    MuiPaper: {
-      defaultProps: {
-        elevation: 8,
-        style: {
-          padding: 16, //TODO - figure out why I can't move this to styleOverrides
-        },
-      },
+
+    // MuiDrawer: {
+    //   styleOverrides: {
+    //     //This is a bit clumsy, but needed to do this to override the paper styles when used in the drawer component
+    //     paper: {
+    //       borderRadius: 0,
+    //       width: drawerWidth,
+    //     },
+    //   },
+    // },
+    MuiDialog: {
       styleOverrides: {
-        root: {
+        paper: {
           borderRadius: 16,
           width: '90%',
           marginLeft: 'auto',
           marginRight: 'auto',
           marginBottom: 32,
+          elevation: 8,
+          boxShadow:
+            '0px 5px 5px -3px rgba(0,0,0,0.2), 0px 8px 10px 1px rgba(0,0,0,0.14), 0px 3px 14px 2px rgba(0,0,0,0.12)', // This is equivalent to elevation 8
         },
       },
     },
-    MuiDrawer: {
+    MuiDialogTitle: {
       styleOverrides: {
-        //This is a bit clumsy, but needed to do this to override the paper styles when used in the drawer component
-        paper: {
-          borderRadius: 0,
-          width: drawerWidth,
+        root: {
+          padding: 8,
+        },
+      },
+    },
+    MuiDialogContent: {
+      styleOverrides: {
+        root: {
+          padding: 8,
         },
       },
     },

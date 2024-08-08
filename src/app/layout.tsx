@@ -8,6 +8,7 @@ import { ThemeProvider } from '@mui/material/styles';
 import theme from '@/theme';
 import './globals.css';
 import { AuthProvider } from '@/contexts/AuthProvider';
+import { ActivityTracker } from '@/components/ActivityTracker';
 
 export const metadata: Metadata = {
   title: 'Drop Bear Care',
@@ -27,7 +28,10 @@ const RootLayout = ({ children }: { children: React.ReactNode }) => {
                 height: { xs: 56, sm: 64 }, //MUI defaults for AppBar
               }}
             />
-            <AuthProvider>{children}</AuthProvider>
+            <AuthProvider>
+              <ActivityTracker />
+              {children}
+            </AuthProvider>
           </ThemeProvider>
         </AppRouterCacheProvider>
       </body>

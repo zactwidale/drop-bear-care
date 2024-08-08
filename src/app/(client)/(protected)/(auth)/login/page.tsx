@@ -30,6 +30,7 @@ import AccessibleErrorMessage from '@/components/AccessibleErrorMessage';
 import SocialLoginButtons from '@/components/SocialLoginButtons';
 import { useAuth } from '@/contexts/AuthProvider';
 import { withPublicRouteProtection } from '@/hocs/routeGuards';
+import DBCPaper from '@/components/DBCPaper';
 
 interface LoginFormValues {
   email: string;
@@ -120,13 +121,13 @@ const Login: React.FC = () => {
   return (
     <>
       <DBCLayout title='Log In' />
-      <Paper sx={{ maxWidth: narrowPaper }}>
+      <DBCPaper sx={{ maxWidth: narrowPaper }}>
         <SocialLoginButtons
           disabled={isSubmittingSocial}
           handleClick={handleLogin}
         />
-      </Paper>
-      <Paper sx={{ maxWidth: narrowPaper }}>
+      </DBCPaper>
+      <DBCPaper sx={{ maxWidth: narrowPaper }}>
         <DBCMarkdown text={header1} />
         <Box display='flex'>
           <DBCMarkdown text={header2} />
@@ -227,7 +228,7 @@ const Login: React.FC = () => {
             </Form>
           )}
         </Formik>
-      </Paper>
+      </DBCPaper>
 
       <Dialog
         open={openErrorDialog}

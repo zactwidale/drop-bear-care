@@ -1,10 +1,10 @@
-"use client";
+'use client';
 
-import React from "react";
-import { useRouter } from "next/navigation";
-import { setEmailCookie } from "@/utils/cookieUtils";
-import DBCLink from "./DBCLink";
-import type { SxProps, Theme } from "@mui/system";
+import React from 'react';
+import { useRouter } from 'next/navigation';
+import { setEmailCookie } from '@/utils/cookieUtils';
+import DBCLink from './DBCLink';
+import type { SxProps, Theme } from '@mui/system';
 
 interface EmailLinkProps {
   email: string;
@@ -21,7 +21,9 @@ export const EmailLink: React.FC<EmailLinkProps> = ({
 }) => {
   const router = useRouter();
 
-  const handleClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+  const handleClick = (
+    e: React.MouseEvent<HTMLAnchorElement | HTMLButtonElement>
+  ) => {
     e.preventDefault();
     setEmailCookie(email);
     router.push(href);

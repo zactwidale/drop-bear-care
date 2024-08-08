@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import {
   Box,
@@ -8,20 +8,23 @@ import {
   ListItemButton,
   ListItemIcon,
   ListItemText,
-} from "@mui/material";
-import HomeOutlinedIcon from "@mui/icons-material/HomeOutlined";
-import AttachMoneyIcon from "@mui/icons-material/AttachMoney";
-import MapIcon from "@mui/icons-material/Map";
-import GavelIcon from "@mui/icons-material/Gavel";
-import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
-import ProfileIcon from "@/assets/icons/koala.svg"; //TODO - better koala icon
-import SearchIcon from "@mui/icons-material/Search";
-import EmailOutlinedIcon from "@mui/icons-material/EmailOutlined";
-import ChatBubblesIcon from "@/assets/icons/chatbubbles-outline.svg";
-import LogoutIcon from "@mui/icons-material/Logout";
-import { useState, useEffect } from "react";
-import Link from "next/link";
-import { useAuth } from "@/contexts/AuthProvider";
+} from '@mui/material';
+import {
+  HomeOutlined as HomeOutlinedIcon,
+  AttachMoney as AttachMoneyIcon,
+  Map as MapIcon,
+  Gavel as GavelIcon,
+  InfoOutlined as InfoOutlinedIcon,
+  Share as ShareIcon,
+  Search as SearchIcon,
+  EmailOutlined as EmailOutlinedIcon,
+  Logout as LogoutIcon,
+} from '@mui/icons-material';
+import ChatBubblesIcon from '@/assets/icons/chatbubbles-outline.svg';
+import ProfileIcon from '@/assets/icons/koala.svg'; //TODO - better koala icon
+import { useState, useEffect } from 'react';
+import Link from 'next/link';
+import { useAuth } from '@/contexts/AuthProvider';
 
 interface DBCListItemProps {
   text: string;
@@ -59,7 +62,7 @@ const DBCListItem: React.FC<DBCListItemProps> = ({
         <Link
           href={href}
           passHref
-          style={{ textDecoration: "none", color: "inherit", width: "100%" }}
+          style={{ textDecoration: 'none', color: 'inherit', width: '100%' }}
         >
           <ListItemButtonUI />
         </Link>
@@ -88,50 +91,56 @@ const DBCDrawerContent: React.FC<DBCDrawerContentProps> = ({ onClose }) => {
         {user && (
           <>
             <DBCListItem
-              text={"Profile"}
+              text={'Profile'}
               icon={<ProfileIcon />}
-              href={"/profile"}
+              href={'/profile'}
               onClick={onClose}
             />
             <DBCListItem
-              text={"Member Search"}
+              text={'Member Search'}
               icon={<SearchIcon />}
-              href={"/search"}
+              href={'/search'}
               onClick={onClose}
             />
             <DBCListItem
-              text={"Chats"}
+              text={'Chats'}
               icon={<ChatBubblesIcon />}
-              href={"/chats"}
+              href={'/chats'}
+              onClick={onClose}
+            />
+            <DBCListItem
+              text={'Referrals Program'}
+              icon={<ShareIcon />}
+              href={'/referrals'}
               onClick={onClose}
             />
             <Divider />
           </>
         )}
-        <DBCListItem text={"Home"} icon={<HomeOutlinedIcon />} href={"/"} />
+        <DBCListItem text={'Home'} icon={<HomeOutlinedIcon />} href={'/'} />
         <DBCListItem
-          text={"About Us"}
+          text={'About Us'}
           icon={<InfoOutlinedIcon />}
-          href={"/about"}
+          href={'/about'}
           onClick={onClose}
         />
         <DBCListItem
-          text={"Pricing Policies"}
+          text={'Pricing Policies'}
           icon={<AttachMoneyIcon />}
-          href={"/pricing"}
+          href={'/pricing'}
           onClick={onClose}
         />
-        <DBCListItem text={"Roadmap"} icon={<MapIcon />} href={"/roadmap"} />
+        <DBCListItem text={'Roadmap'} icon={<MapIcon />} href={'/roadmap'} />
         <DBCListItem
-          text={"Legal Stuff"}
+          text={'Legal Stuff'}
           icon={<GavelIcon />}
-          href={"/legals"}
+          href={'/legals'}
           onClick={onClose}
         />
         <DBCListItem
-          text={"Contact Us"}
+          text={'Contact Us'}
           icon={<EmailOutlinedIcon />}
-          href={"/contact"}
+          href={'/contact'}
           onClick={onClose}
         />
       </List>
@@ -139,7 +148,7 @@ const DBCDrawerContent: React.FC<DBCDrawerContentProps> = ({ onClose }) => {
       {user && (
         <List>
           <DBCListItem
-            text={"Logout"}
+            text={'Logout'}
             icon={<LogoutIcon />}
             onClick={handleLogout}
           />

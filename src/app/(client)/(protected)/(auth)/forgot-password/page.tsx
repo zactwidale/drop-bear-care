@@ -22,6 +22,7 @@ import { narrowPaper } from '@/lib/constants';
 import { getEmailFromCookie } from '@/utils/cookieUtils';
 import { EmailLink } from '@/components/EmailLink';
 import { withPublicRouteProtection } from '@/hocs/routeGuards';
+import DBCPaper from '@/components/DBCPaper';
 
 interface FormValues {
   email: string;
@@ -86,7 +87,7 @@ const Login: React.FC = () => {
   return (
     <>
       <DBCLayout title='Password Reset' />
-      <Paper sx={{ maxWidth: narrowPaper }}>
+      <DBCPaper sx={{ maxWidth: narrowPaper }}>
         <DBCMarkdown text={header} />
         <Formik
           initialValues={initialValues}
@@ -134,7 +135,7 @@ const Login: React.FC = () => {
             </Form>
           )}
         </Formik>
-      </Paper>
+      </DBCPaper>
 
       <Dialog
         open={openMessageDialog}

@@ -3,9 +3,10 @@ import { Form, Formik, type FormikProps } from 'formik';
 import * as Yup from 'yup';
 import { Box } from '@mui/material';
 import DBCMarkdown from '@/components/DBCMarkdown';
-import { useAuth, type Languages } from '@/contexts/AuthProvider';
+import { useAuth } from '@/contexts/AuthProvider';
 import { getNextOnboardingStage } from '@/types/onboarding';
 import LanguagesSelector from './LanguagesSelector';
+import type { Languages } from '@/types';
 
 interface LanguagesFormValues {
   languages: Languages | null;
@@ -40,7 +41,7 @@ const LanguagesForm = forwardRef<LanguagesFormRef, LanguagesFormProps>(
         const nextStage = getNextOnboardingStage(userData!.onboardingStage);
         if (nextStage !== null) {
           await updateUserData({
-            languages: values.languages || undefined,
+            languages: values.languages || [],
             onboardingStage: nextStage,
           });
           onSubmit();

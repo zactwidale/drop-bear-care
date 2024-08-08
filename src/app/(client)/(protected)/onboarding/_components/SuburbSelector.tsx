@@ -7,22 +7,23 @@ import {
   CircularProgress,
   Paper,
 } from '@mui/material';
-import type { Suburb } from '@/contexts/AuthProvider';
+import type { SuburbJSON, SuburbFirestore } from '@/types';
 import suburbsData from '@/assets/suburbs.json';
+import DBCPaper from '@/components/DBCPaper';
 
 interface SuburbSelectorProps {
-  onSuburbSelected: (suburb: Suburb | null) => void;
-  initialValue?: Suburb | null;
+  onSuburbSelected: (suburb: SuburbJSON | null) => void;
+  initialValue?: SuburbJSON | null;
 }
 
 const SuburbSelector: React.FC<SuburbSelectorProps> = ({
   onSuburbSelected,
   initialValue = null,
 }) => {
-  const [suburbs, setSuburbs] = useState<Suburb[]>([]);
+  const [suburbs, setSuburbs] = useState<SuburbJSON[]>([]);
   const [loading, setLoading] = useState(true);
   const [inputValue, setInputValue] = useState('');
-  const [selectedSuburb, setSelectedSuburb] = useState<Suburb | null>(
+  const [selectedSuburb, setSelectedSuburb] = useState<SuburbJSON | null>(
     initialValue
   );
 
@@ -32,12 +33,12 @@ const SuburbSelector: React.FC<SuburbSelectorProps> = ({
   }, []);
 
   const filterOptions = useCallback(
-    (options: Suburb[], { inputValue }: { inputValue: string }) => {
+    (options: SuburbJSON[], { inputValue }: { inputValue: string }) => {
       const searchTerm = inputValue.toLowerCase().trim();
       if (searchTerm.length < 2) return [];
       const filtered = options.filter((option) => {
         const matchSuburb = option.suburb.toLowerCase().includes(searchTerm);
-        const matchPostcode = option.postcode.toString() === searchTerm;
+        const matchPostcode = option.postcode === searchTerm;
         const matchState = option.state.toLowerCase() === searchTerm;
         return matchSuburb || matchPostcode || matchState;
       });
@@ -47,19 +48,20 @@ const SuburbSelector: React.FC<SuburbSelectorProps> = ({
   );
 
   const getOptionLabel = useCallback(
-    (option: Suburb) => `${option.suburb}, ${option.state} ${option.postcode}`,
+    (option: SuburbJSON) =>
+      `${option.suburb}, ${option.state} ${option.postcode}`,
     []
   );
 
   const renderOption = useCallback(
-    (props: React.HTMLAttributes<HTMLLIElement>, option: Suburb) => (
+    (props: React.HTMLAttributes<HTMLLIElement>, option: SuburbJSON) => (
       <li {...props} key={option.id}>
         <Box display='flex'>
           <Typography variant='body1' mr={1}>
             {option.suburb}
           </Typography>
           <Typography variant='body1' color='text.secondary'>
-            {option.state}, {option.postcode}
+            {option.state} {option.postcode}
           </Typography>
         </Box>
       </li>
@@ -78,7 +80,7 @@ const SuburbSelector: React.FC<SuburbSelectorProps> = ({
 
   return (
     <Box>
-      <Autocomplete<Suburb, false, false, false>
+      <Autocomplete<SuburbJSON, false, false, false>
         options={suburbs}
         getOptionLabel={getOptionLabel}
         renderOption={renderOption}
@@ -94,7 +96,7 @@ const SuburbSelector: React.FC<SuburbSelectorProps> = ({
           <TextField {...params} label='Suburb' variant='outlined' required />
         )}
         PaperComponent={({ children }) => (
-          <Paper
+          <DBCPaper
             sx={{
               minWidth: '100%',
               borderTopLeftRadius: 0,
@@ -102,7 +104,7 @@ const SuburbSelector: React.FC<SuburbSelectorProps> = ({
             }}
           >
             {children}
-          </Paper>
+          </DBCPaper>
         )}
         disableListWrap
         noOptionsText='No suburbs found'

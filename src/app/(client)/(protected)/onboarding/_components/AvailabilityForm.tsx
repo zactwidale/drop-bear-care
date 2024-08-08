@@ -2,18 +2,15 @@ import { forwardRef, useImperativeHandle, useRef, useState } from 'react';
 import { Formik, Form, FormikProps } from 'formik';
 import * as Yup from 'yup';
 import { Box } from '@mui/material';
-import {
-  useAuth,
-  type Availability,
-  type TimeFormat,
-} from '@/contexts/AuthProvider';
+import { useAuth } from '@/contexts/AuthProvider';
 import { getNextOnboardingStage } from '@/types/onboarding';
 import AvailabilitySelector from './AvailabilitySelector';
 import DBCMarkdown from '@/components/DBCMarkdown';
+import type { Availability, TimeFormat } from '@/types';
 
 interface AvailabilityFormValues {
   availability: Availability | null;
-  timeFormatPreference: TimeFormat | null;
+  timeFormatPreference: TimeFormat;
 }
 
 interface AvailabilityFormProps {
@@ -78,9 +75,8 @@ const AvailabilityForm = forwardRef<AvailabilityFormRef, AvailabilityFormProps>(
         <Formik
           innerRef={formikRef}
           initialValues={{
-            location: userData?.location || null,
-            availability: userData?.availability || null,
-            timeFormatPreference: userData?.timeFormatPreference || null,
+            availability: userData?.availability || [],
+            timeFormatPreference: userData?.timeFormatPreference || '24',
           }}
           onSubmit={handleSubmit}
         >

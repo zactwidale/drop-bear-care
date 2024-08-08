@@ -16,7 +16,6 @@ import {
   InputLabel,
   Grid,
   Typography,
-  Paper,
   Switch,
   FormControlLabel,
   styled,
@@ -31,12 +30,14 @@ import {
   minutesToDayjs,
   minutesToTime,
 } from '@/utils/timeConversions';
-import type {
-  Availability,
-  AvailabilitySlot,
-  Day,
-  TimeFormat,
-} from '@/contexts/AuthProvider';
+import {
+  dayOrder,
+  week,
+  type Availability,
+  type AvailabilitySlot,
+  type Day,
+  type TimeFormat,
+} from '@/types';
 
 //TODO - lots of work on styling required here - beware of changing layout affecting the
 // function of the switch and delete buttons - strange interplay happening.
@@ -49,31 +50,11 @@ interface AvailabilitySelectorProps {
   onTimeFormatPreferenceChange: (newPreference: TimeFormat) => void;
 }
 
-const individualDays: Day[] = [
-  'Monday',
-  'Tuesday',
-  'Wednesday',
-  'Thursday',
-  'Friday',
-  'Saturday',
-  'Sunday',
-];
-
-const dayOrder: { [key in Day]: number } = {
-  Monday: 0,
-  Tuesday: 1,
-  Wednesday: 2,
-  Thursday: 3,
-  Friday: 4,
-  Saturday: 5,
-  Sunday: 6,
-};
-
 const specialOptions = ['Everyday', 'All Weekdays', 'Weekends'] as const;
 type SpecialOption = (typeof specialOptions)[number];
 type DayOption = Day | SpecialOption;
 
-const allOptions: DayOption[] = [...specialOptions, ...individualDays];
+const allOptions: DayOption[] = [...specialOptions, ...week];
 
 const AvailabilitySelector: React.FC<AvailabilitySelectorProps> = ({
   availability,
@@ -106,11 +87,11 @@ const AvailabilitySelector: React.FC<AvailabilitySelectorProps> = ({
   const getDaysForOption = (option: SpecialOption): Day[] => {
     switch (option) {
       case 'Everyday':
-        return individualDays;
+        return week;
       case 'All Weekdays':
-        return individualDays.slice(0, 5);
+        return week.slice(0, 5);
       case 'Weekends':
-        return individualDays.slice(5);
+        return week.slice(5);
     }
   };
 
@@ -302,22 +283,6 @@ const AvailabilitySelector: React.FC<AvailabilitySelectorProps> = ({
     '& .MuiInputLabel-root': {
       backgroundColor: theme.palette.background.paper,
       padding: '0 4px',
-    },
-  }));
-
-  const StyledTimePicker = styled(TimePicker)(({ theme }) => ({
-    '& .MuiPaper-root': {
-      borderTopLeftRadius: 0,
-      borderTopRightRadius: 0,
-    },
-    '& .MuiClockPicker-root': {
-      width: '100%',
-      maxWidth: 'none',
-    },
-    '& .MuiClock-clock': {
-      width: '200px !important',
-      height: '200px !important',
-      margin: '16px auto',
     },
   }));
 

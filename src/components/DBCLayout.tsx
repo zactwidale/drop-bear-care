@@ -1,18 +1,38 @@
-"use client";
+'use client';
 
-import React, { useState } from "react";
-import DBCAppBar from "./DBCAppBar";
-import DBCDrawer from "./DBCDrawer";
-import LoginSplitButton from "./LoginSplitButton";
+import React, { useState, ReactNode } from 'react';
+import DBCAppBar from './DBCAppBar';
+import DBCDrawer from './DBCDrawer';
+import LoginSplitButton from './LoginSplitButton';
 
-interface DBCLayoutProps {
+type DBCLayoutBaseProps = {
   title?: string;
-  showLoginButton?: boolean;
-}
+};
+
+type DBCLayoutWithLoginButton = DBCLayoutBaseProps & {
+  showLoginButton: true;
+  rightButton?: never;
+};
+
+type DBCLayoutWithRightButton = DBCLayoutBaseProps & {
+  showLoginButton?: never;
+  rightButton: ReactNode;
+};
+
+type DBCLayoutWithoutButton = DBCLayoutBaseProps & {
+  showLoginButton?: false;
+  rightButton?: never;
+};
+
+type DBCLayoutProps =
+  | DBCLayoutWithLoginButton
+  | DBCLayoutWithRightButton
+  | DBCLayoutWithoutButton;
 
 const DBCLayout: React.FC<DBCLayoutProps> = ({
-  title = "",
+  title = '',
   showLoginButton = false,
+  rightButton,
 }) => {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const handleDrawerOpen = () => {
@@ -23,15 +43,26 @@ const DBCLayout: React.FC<DBCLayoutProps> = ({
     setDrawerOpen(false);
   };
 
+  const renderRightButton = () => {
+    if (rightButton) {
+      return rightButton;
+    }
+    if (showLoginButton) {
+      return <LoginSplitButton />;
+    }
+    return null;
+  };
+
   return (
     <>
       <DBCAppBar
         title={title}
-        rightButton={showLoginButton && <LoginSplitButton />}
+        rightButton={renderRightButton()}
         onMenuClick={handleDrawerOpen}
       />
       <DBCDrawer open={drawerOpen} onClose={handleDrawerClose} />
     </>
   );
 };
+
 export default DBCLayout;

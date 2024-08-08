@@ -31,6 +31,7 @@ import { firebaseErrorToMessage } from '@/utils/authUtils';
 import AccessibleErrorMessage from '@/components/AccessibleErrorMessage';
 import SocialLoginButtons from '@/components/SocialLoginButtons';
 import { withPublicRouteProtection } from '@/hocs/routeGuards';
+import DBCPaper from '@/components/DBCPaper';
 
 interface LoginFormValues {
   email: string;
@@ -133,13 +134,13 @@ const Register: React.FC = () => {
   return (
     <>
       <DBCLayout title='Create Account' />
-      <Paper sx={{ maxWidth: narrowPaper }}>
+      <DBCPaper sx={{ maxWidth: narrowPaper }}>
         <SocialLoginButtons
           disabled={isSubmittingSocial}
           handleClick={handleAccountCreation}
         />
-      </Paper>
-      <Paper sx={{ maxWidth: narrowPaper }}>
+      </DBCPaper>
+      <DBCPaper sx={{ maxWidth: narrowPaper }}>
         <DBCMarkdown text={header1} />
         <Box display='flex' sx={{ marginBottom: 3 }}>
           <Typography variant='body1' sx={{ paddingRight: 3 }}>
@@ -229,7 +230,7 @@ const Register: React.FC = () => {
             </Form>
           )}
         </Formik>
-      </Paper>
+      </DBCPaper>
 
       <Dialog
         open={openErrorDialog}

@@ -22,12 +22,13 @@ import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import dayjs, { Dayjs } from 'dayjs';
 import 'dayjs/locale/en-au';
 import DBCMarkdown from '@/components/DBCMarkdown';
-import { useAuth, type Gender } from '@/contexts/AuthProvider';
+import { useAuth } from '@/contexts/AuthProvider';
 import { getNextOnboardingStage } from '@/types/onboarding';
 import DBCLink from '@/components/DBCLink';
 import InfoModal from '@/components/InfoModal';
 import TextFieldWithError from '@/components/TextFieldWithError';
 import { Timestamp } from 'firebase/firestore';
+import type { Gender } from '@/types';
 
 interface PersonalDetailsFormValues {
   firstName: string;

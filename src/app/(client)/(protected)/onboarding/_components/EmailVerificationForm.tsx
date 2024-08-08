@@ -21,6 +21,8 @@ export default function EmailVerificationForm() {
   We sent you an email verification link when you registered. Please check your email and click on the link to verify your email.
 
   If you need another email sending, please click the button below.
+
+  If you have verified your email and still see this message, try refreshing the page.
     `;
 
   const emailSentMessage = `

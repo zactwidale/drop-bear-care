@@ -43,6 +43,7 @@ import LanguagesForm, {
 } from './_components/LanguagesForm';
 import WelcomeForm, { type WelcomeFormRef } from './_components/WelcomeForm';
 import LoadingPage from '@/components/LoadingPage';
+import DBCPaper from '@/components/DBCPaper';
 
 const logoutConfirmation = `
 This onboarding process is a necessary part of the process of utilising our services to connect with other members.
@@ -253,7 +254,7 @@ const Onboarding = () => {
         showMenuButton={false}
         rightButton={logoutButton}
       />
-      <Paper>
+      <DBCPaper>
         {userData!.onboardingStage ===
         OnboardingStage.Welcome ? null : userData!.onboardingStage ===
           OnboardingStage.Availability ? (
@@ -274,7 +275,7 @@ const Onboarding = () => {
           onBack={handleBack}
           isProcessing={isProcessing}
         />
-      </Paper>
+      </DBCPaper>
       <Dialog open={openDialog} onClose={handleCloseDialog}>
         <DialogTitle>Are you sure you want to log out?</DialogTitle>
         <DialogContent>

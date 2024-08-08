@@ -1,8 +1,9 @@
-"use client";
-import DBCLayout from "@/components/DBCLayout";
-import { Paper } from "@mui/material";
-import DBCMarkdown from "@/components/DBCMarkdown";
-import { useAuth } from "@/contexts/AuthProvider";
+'use client';
+import DBCLayout from '@/components/DBCLayout';
+import { Paper } from '@mui/material';
+import DBCMarkdown from '@/components/DBCMarkdown';
+import { useAuth } from '@/contexts/AuthProvider';
+import DBCPaper from '@/components/DBCPaper';
 
 const card1 = `
 ## Support Seekers
@@ -69,19 +70,19 @@ const Pricing: React.FC = () => {
   const { user } = useAuth();
   return (
     <>
-      <DBCLayout title="Pricing Policies" showLoginButton={!user} />
-      <Paper>
+      <DBCLayout title='Pricing Policies' showLoginButton={!user} />
+      <DBCPaper>
         <DBCMarkdown text={card1} />
-      </Paper>
-      <Paper>
+      </DBCPaper>
+      <DBCPaper>
         <DBCMarkdown text={card2} />
-      </Paper>
-      <Paper>
+      </DBCPaper>
+      <DBCPaper>
         <DBCMarkdown text={card3} />
-      </Paper>
-      <Paper>
+      </DBCPaper>
+      <DBCPaper>
         <DBCMarkdown text={card4} />
-      </Paper>
+      </DBCPaper>
     </>
   );
 };

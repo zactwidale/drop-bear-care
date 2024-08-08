@@ -21,71 +21,7 @@ import * as authServices from '@/lib/firebase/authServices';
 import { OnboardingStage } from '@/types/onboarding';
 import { generateAndUploadRandomAvatar } from '@/utils/avatarGenerator';
 import { getDownloadURL, getStorage, ref, uploadBytes } from 'firebase/storage';
-
-export type Gender = 'male' | 'female' | 'other' | 'prefer not to say';
-
-export interface Suburb {
-  id: string;
-  suburb: string;
-  state: string;
-  postcode: string;
-  latitude: number;
-  longitude: number;
-}
-export type Day =
-  | 'Monday'
-  | 'Tuesday'
-  | 'Wednesday'
-  | 'Thursday'
-  | 'Friday'
-  | 'Saturday'
-  | 'Sunday';
-
-export interface AvailabilitySlot {
-  id: string;
-  day: Day;
-  startTime: number; // minutes since midnight
-  endTime: number; // minutes since midnight
-}
-export type TimeFormat = '12' | '24';
-
-export type Availability = AvailabilitySlot[];
-
-export type LanguageLevel =
-  | 'native'
-  | 'fluent'
-  | 'advanced'
-  | 'intermediate'
-  | 'beginner';
-
-export interface Language {
-  language: string;
-  level: LanguageLevel;
-}
-
-export type Languages = Language[];
-
-export interface UserData {
-  uid: string;
-  firstName: string;
-  lastName: string;
-  displayName: string;
-  photoURL: string;
-  createdAt: Timestamp;
-  onboardingStage: OnboardingStage;
-  membershipType?: 'provider' | 'seeker';
-  preferredName?: string;
-  dateOfBirth?: Timestamp;
-  age?: string;
-  hideAge?: boolean;
-  gender?: Gender;
-  bio?: string;
-  photoURLs?: string[];
-  location?: Suburb;
-  timeFormatPreference?: TimeFormat;
-  availability?: Availability;
-  languages?: Languages;
-}
+import type { UserData } from '@/types';
 
 export interface AuthContextProps {
   user: User | null;
@@ -148,6 +84,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
           lastName: tokenResponse?.lastName || '',
           displayName: '',
           photoURL: photoURL,
+          lastActive: Timestamp.fromMillis(Date.now()),
           createdAt: Timestamp.fromMillis(Date.now()),
           onboardingStage: OnboardingStage.MembershipType,
         };
@@ -270,6 +207,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
           lastName: '',
           displayName: '',
           photoURL: photoURL,
+          lastActive: Timestamp.fromMillis(Date.now()),
           createdAt: Timestamp.fromMillis(Date.now()),
           onboardingStage: user.emailVerified
             ? OnboardingStage.MembershipType

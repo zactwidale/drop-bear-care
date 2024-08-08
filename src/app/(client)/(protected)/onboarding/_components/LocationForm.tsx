@@ -2,13 +2,18 @@ import { forwardRef, useImperativeHandle, useRef, useState } from 'react';
 import { Formik, Form, FormikProps } from 'formik';
 import * as Yup from 'yup';
 import { Box, FormHelperText } from '@mui/material';
-import { useAuth, type Suburb } from '@/contexts/AuthProvider';
+import { useAuth } from '@/contexts/AuthProvider';
 import SuburbSelector from './SuburbSelector';
 import { getNextOnboardingStage } from '@/types/onboarding';
 import DBCMarkdown from '@/components/DBCMarkdown';
+import type { SuburbFirestore, SuburbJSON } from '@/types';
+import {
+  firestoreToJSON,
+  jsonToFirestore,
+} from '../../../../../types/location';
 
 interface LocationFormValues {
-  location: Suburb | null;
+  location: SuburbJSON | null;
 }
 
 const validationSchema = Yup.object().shape({
@@ -44,7 +49,7 @@ const LocationForm = forwardRef<LocationFormRef, LocationFormProps>(
         if (values.location) {
           const nextStage = getNextOnboardingStage(userData!.onboardingStage);
           await updateUserData({
-            location: values.location,
+            location: jsonToFirestore(values.location),
             onboardingStage: nextStage!,
           });
           onSubmit();
@@ -72,7 +77,7 @@ const LocationForm = forwardRef<LocationFormRef, LocationFormProps>(
         <Formik
           innerRef={formikRef}
           initialValues={{
-            location: userData?.location || null,
+            location: firestoreToJSON(userData?.location),
             availability: userData?.availability || null,
             timeFormatPreference: userData?.timeFormatPreference || null,
           }}

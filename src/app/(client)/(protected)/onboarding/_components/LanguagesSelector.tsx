@@ -21,11 +21,7 @@ import {
   TextField,
 } from '@mui/material';
 import { Add as AddIcon, Delete as DeleteIcon } from '@mui/icons-material';
-import type {
-  Language,
-  LanguageLevel,
-  Languages,
-} from '@/contexts/AuthProvider';
+import type { Language, LanguageLevel, Languages } from '@/types';
 
 // Import the language data
 import languagesData from '@/assets/languages.json';

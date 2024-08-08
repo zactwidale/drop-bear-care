@@ -18,7 +18,7 @@ import {
   Avatar,
   ButtonBase,
 } from '@mui/material';
-import { useAuth, type UserData } from '@/contexts/AuthProvider';
+import { useAuth } from '@/contexts/AuthProvider';
 import { getNextOnboardingStage } from '@/types/onboarding';
 import InfoModal from '@/components/InfoModal';
 import Image from 'next/image';
@@ -46,6 +46,7 @@ import 'swiper/css/navigation';
 import 'swiper/css/pagination';
 import 'swiper/css/effect-coverflow';
 import ResponsiveAvatar from '@/components/ResponsiveAvatar';
+import type { UserData } from '@/types';
 
 const StyledSwiperWrapper = styled(Box)(({ theme }) => ({
   '& .mySwiper': {

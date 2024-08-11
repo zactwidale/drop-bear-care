@@ -7,7 +7,7 @@ import { isLastOnboardingStage } from '@/types/onboarding';
 // Types for better type safety
 type AuthState = 'loading' | 'unauthorized' | 'onboarding' | 'authorized';
 type OnboardingState = 'loading' | 'unauthorized' | 'onboarding' | 'completed';
-type PublicRouteState = 'loading' | 'public' | 'authenticated';
+type PublicRouteState = 'loading' | 'public' | 'authenticated' | 'onboarding';
 
 // Reusable redirect function
 const useRedirect = () => {
@@ -64,7 +64,7 @@ export function withOnboardingProtection<P extends object>(
         setOnboardingState('onboarding');
       } else {
         setOnboardingState('completed');
-        redirect('/search');
+        redirect('/search'); // or any other main app page
       }
     }, [user, userData, loading, redirect]);
 
@@ -77,19 +77,24 @@ export function withPublicRouteProtection<P extends object>(
   WrappedComponent: React.ComponentType<P>
 ) {
   return function PublicRouteProtection(props: P) {
-    const { user, loading } = useAuth();
+    const { user, userData, loading } = useAuth();
     const redirect = useRedirect();
     const [routeState, setRouteState] = useState<PublicRouteState>('loading');
 
     useEffect(() => {
       if (loading) return;
       if (user) {
-        setRouteState('authenticated');
-        redirect('/search');
+        if (userData && !isLastOnboardingStage(userData.onboardingStage)) {
+          setRouteState('onboarding');
+          redirect('/onboarding');
+        } else {
+          setRouteState('authenticated');
+          redirect('/search'); // or any other main app page
+        }
       } else {
         setRouteState('public');
       }
-    }, [user, loading, redirect]);
+    }, [user, userData, loading, redirect]);
 
     if (routeState !== 'public') return <LoadingPage />;
     return <WrappedComponent {...props} />;

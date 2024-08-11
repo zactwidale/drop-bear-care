@@ -117,7 +117,7 @@ who you REALLY are!`;
       }
     };
 
-    const footerMessage = `If you'd like to add a little flair to your bio, it will be rendered using [Markdown](https://www.markdownguide.org).`;
+    const footerMessage = `Optional: If you'd like to add a little flair to your bio, it will be rendered using [Markdown styling](https://www.markdownguide.org).`;
 
     return (
       <Box sx={{ width: '100%', maxWidth: 600, margin: 'auto' }}>

@@ -35,21 +35,12 @@ const WelcomeForm = forwardRef<WelcomeFormRef, WelcomeFormProps>(
     };
 
     const headerMessage = () => {
-      const welcomeMessage = `## Welcome to Drop Bear Care!
-Thank you for taking the time to fill in the details on your profile.
-
-You will be able to amend and update these details at any time via your profile page.`;
-
-      const commonMessage = `Unlike other comparable introduction agencies, we won't be sticking our hand in your
-pocket every time you work. This also means that you will be responsible for making your
-own agreements with new clients. In the longer term, we hope to offer some assistance
-with this process, but we are just getting started. For now, this is a bare-bones service.
-
-Once again, thanks for joining us.`;
-
       switch (userData?.membershipType) {
         case 'provider':
-          return `${welcomeMessage}
+          return `
+Thank you for taking the time to fill in the details on your profile.
+
+You will be able to amend and update these details at any time via your profile page.
 
 You are now free to browse the profiles of members looking for your support.
 However, you will not be able to make contact with them until you complete a further
@@ -57,11 +48,19 @@ screening process. Nor will your profile be visible to them until this screening
 is complete. We trust that you understand the necessity of this screening
 in order to protect some very vulnerable members of our community.
 
-${commonMessage}
+Unlike other comparable introduction agencies, we won't be sticking our hand in your
+pocket every time you work. This also means that you will be responsible for making your
+own agreements with new clients. In the longer term, we hope to offer some assistance
+with this process, but we are just getting started. For now, this is a bare-bones service.
 
-We hope that our services will save you a small fortune in commissions!`;
+We hope that our services will save you a small fortune in commissions!
+Once again, thanks for joining us.
+`;
         case 'seeker':
-          return `${welcomeMessage}
+          return `
+Thank you for taking the time to fill in the details on your profile.
+
+You will be able to amend and update these details at any time via your profile page.
 
 You are now free to browse the profiles of potential support workers and carers.
 Please rest assured that any profiles that you see have undergone basic screening.
@@ -71,9 +70,14 @@ This includes:
 * NDIS worker screening check;
 * Working with children check.
 
-${commonMessage}
+Unlike with other comparable introduction agencies, your funding goes to those who support
+you and not our commissions. Your support workers will be much better paid! This also 
+means that you and your support workers will be responsible for making your
+own mutually acceptable agreements. In the longer term, we hope to offer some assistance
+with this process, but we are just getting started. For now, this is a bare-bones service.
 
-Your support workers will be much better paid.`;
+Once again, thanks for joining us.
+`;
         default:
           return ``;
       }

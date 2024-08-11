@@ -34,7 +34,7 @@ const validationSchema = Yup.object().shape({
 
 const Login: React.FC = () => {
   const { resetPassword } = useAuth();
-  const emailRef = useRef<HTMLInputElement>(null);
+  // const emailRef = useRef<HTMLInputElement>(null);
   const [openMessageDialog, setOpenMessageDialog] = useState(false);
   const [isSubmittingSocial, setSubmittingSocial] = useState(false);
   const router = useRouter();
@@ -48,9 +48,9 @@ const Login: React.FC = () => {
     }
   }, []);
 
-  useEffect(() => {
-    emailRef.current!.focus();
-  }, [router]);
+  // useEffect(() => {
+  //   emailRef.current!.focus();
+  // }, [router]);
 
   let initialValues = {
     email: email,
@@ -102,7 +102,7 @@ const Login: React.FC = () => {
                 name='email'
                 autoComplete='email'
                 label='Email'
-                inputRef={emailRef}
+                // inputRef={emailRef}
                 error={hasSubmitted && errors.email}
                 helperText={hasSubmitted && errors.email}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => {

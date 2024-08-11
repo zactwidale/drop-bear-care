@@ -7,6 +7,7 @@ export interface SearchResult {
   displayName: string | null;
   photoURL: string | null;
   membershipType: string;
+  suburb: string;
   distance: number;
   availability: Availability | null;
   lastActive: Timestamp | null;

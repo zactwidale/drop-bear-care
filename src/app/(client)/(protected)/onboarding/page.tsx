@@ -4,7 +4,7 @@ import DBCAppBar from '@/components/DBCAppBar';
 import { useAuth } from '@/contexts/AuthProvider';
 import { withOnboardingProtection } from '@/hocs/routeGuards';
 import { useRouter } from 'next/navigation';
-import { useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import LogoutIcon from '@mui/icons-material/Logout';
 import {
   Box,
@@ -44,6 +44,7 @@ import LanguagesForm, {
 import WelcomeForm, { type WelcomeFormRef } from './_components/WelcomeForm';
 import LoadingPage from '@/components/LoadingPage';
 import DBCPaper from '@/components/DBCPaper';
+import { log } from 'console';
 
 const logoutConfirmation = `
 This onboarding process is a necessary part of the process of utilising our services to connect with other members.
@@ -68,6 +69,11 @@ const Onboarding = () => {
   const languagesFormRef = useRef<LanguagesFormRef>(null);
   const welcomeFormRef = useRef<WelcomeFormRef>(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const contentRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [userData?.onboardingStage]);
 
   if (!userData) {
     return <LoadingPage />;
@@ -254,28 +260,32 @@ const Onboarding = () => {
         showMenuButton={false}
         rightButton={logoutButton}
       />
-      <DBCPaper>
-        {userData!.onboardingStage ===
-        OnboardingStage.Welcome ? null : userData!.onboardingStage ===
-          OnboardingStage.Availability ? (
-          userData!.membershipType === 'provider' ? (
-            <DBCMarkdown text={`## Availability`} />
+      <div ref={contentRef}>
+        <DBCPaper>
+          {userData!.onboardingStage === OnboardingStage.Welcome ? (
+            <DBCMarkdown text={`## Welcome to Drop Bear Care!`} />
+          ) : userData!.onboardingStage ===
+            OnboardingStage.MembershipType ? null : userData!
+              .onboardingStage === OnboardingStage.Availability ? (
+            userData!.membershipType === 'provider' ? (
+              <DBCMarkdown text={`## Availability`} />
+            ) : (
+              <DBCMarkdown text={`## Required Support Hours`} />
+            )
           ) : (
-            <DBCMarkdown text={`## Hours of Need`} />
-          )
-        ) : (
-          <DBCMarkdown
-            text={`## ${getOnboardingStageName(userData!.onboardingStage)}`}
+            <DBCMarkdown
+              text={`## ${getOnboardingStageName(userData!.onboardingStage)}`}
+            />
+          )}
+          {onboardingStageComponent()}
+          <OnboardingStepper
+            activeStep={userData!.onboardingStage}
+            onNext={handleNext}
+            onBack={handleBack}
+            isProcessing={isProcessing}
           />
-        )}
-        {onboardingStageComponent()}
-        <OnboardingStepper
-          activeStep={userData!.onboardingStage}
-          onNext={handleNext}
-          onBack={handleBack}
-          isProcessing={isProcessing}
-        />
-      </DBCPaper>
+        </DBCPaper>
+      </div>
       <Dialog open={openDialog} onClose={handleCloseDialog}>
         <DialogTitle>Are you sure you want to log out?</DialogTitle>
         <DialogContent>

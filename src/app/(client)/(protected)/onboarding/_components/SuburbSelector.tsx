@@ -14,11 +14,13 @@ import DBCPaper from '@/components/DBCPaper';
 interface SuburbSelectorProps {
   onSuburbSelected: (suburb: SuburbJSON | null) => void;
   initialValue?: SuburbJSON | null;
+  autoFocus?: boolean;
 }
 
 const SuburbSelector: React.FC<SuburbSelectorProps> = ({
   onSuburbSelected,
   initialValue = null,
+  autoFocus = false,
 }) => {
   const [suburbs, setSuburbs] = useState<SuburbJSON[]>([]);
   const [loading, setLoading] = useState(true);
@@ -93,7 +95,13 @@ const SuburbSelector: React.FC<SuburbSelectorProps> = ({
         onInputChange={(_, newInputValue) => setInputValue(newInputValue)}
         inputValue={inputValue}
         renderInput={(params) => (
-          <TextField {...params} label='Suburb' variant='outlined' required />
+          <TextField
+            {...params}
+            label='Suburb'
+            variant='outlined'
+            required
+            autoFocus={autoFocus}
+          />
         )}
         PaperComponent={({ children }) => (
           <DBCPaper

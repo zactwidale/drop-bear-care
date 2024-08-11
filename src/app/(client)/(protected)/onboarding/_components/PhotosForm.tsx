@@ -480,6 +480,7 @@ manipulation is certainly on the 'To Do' list.`;
                                   }
                                   alt={`User photo ${index + 1}`}
                                   fill
+                                  sizes='300px'
                                   priority={index === 0}
                                   style={{
                                     maxWidth: '100%',

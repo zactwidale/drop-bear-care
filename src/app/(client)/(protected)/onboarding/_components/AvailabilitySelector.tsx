@@ -219,7 +219,7 @@ const AvailabilitySelector: React.FC<AvailabilitySelectorProps> = ({
 
     onAvailabilityChange(newAvailability);
     setIsDialogOpen(false);
-    setNewSlot({ dayOption: 'Monday', startTime: 9 * 60, endTime: 17 * 60 });
+    setNewSlot({ dayOption: 'Everyday', startTime: 9 * 60, endTime: 17 * 60 });
     setError(null);
   };
 

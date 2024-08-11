@@ -34,7 +34,7 @@ interface PersonalDetailsFormValues {
   firstName: string;
   lastName: string;
   preferredName: string;
-  dateOfBirth: Timestamp | null;
+  dateOfBirth: Date | null;
   hideAge: boolean;
   gender: Gender | '';
 }
@@ -47,26 +47,10 @@ const validationSchema = Yup.object().shape({
   firstName: Yup.string().required('First name is required'),
   lastName: Yup.string().required('Last name is required'),
   preferredName: Yup.string(),
-  dateOfBirth: Yup.mixed()
+  dateOfBirth: Yup.date()
     .nullable()
     .required('Date of birth is required')
-    .test('is-date', 'Invalid date', (value) => {
-      if (!value) return false;
-      if (isTimestamp(value)) {
-        return true;
-      }
-      if (typeof value === 'string') {
-        return dayjs(value, 'YYYY-MM-DD', true).isValid();
-      }
-      return false;
-    })
-    .test('not-future', 'Date of birth cannot be in the future', (value) => {
-      if (!value) return true;
-      const date = isTimestamp(value)
-        ? value.toDate()
-        : dayjs(value as string).toDate();
-      return date <= new Date();
-    }),
+    .max(new Date(), 'Date of birth cannot be in the future'),
   hideAge: Yup.boolean(),
   gender: Yup.mixed<Gender>()
     .oneOf(
@@ -93,6 +77,7 @@ const PersonalDetailsForm = forwardRef<
   const formikRef = useRef<FormikProps<PersonalDetailsFormValues>>(null);
   const [hasSubmitted, setHasSubmitted] = useState(false);
   const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
+  const [openDatePicker, setOpenDatePicker] = useState(false);
 
   useImperativeHandle(ref, () => ({
     submitForm: async () => {
@@ -103,9 +88,9 @@ const PersonalDetailsForm = forwardRef<
     },
   }));
 
-  const calculateAgeRange = (dateOfBirth: Timestamp): string => {
+  const calculateAgeRange = (dateOfBirth: Date): string => {
     const today = dayjs();
-    const birthDate = dayjs(dateOfBirth.toDate());
+    const birthDate = dayjs(dateOfBirth);
     const age = today.diff(birthDate, 'year');
 
     const lowerBound = Math.floor(age / 5) * 5;
@@ -122,11 +107,10 @@ const PersonalDetailsForm = forwardRef<
         let ageRange: string = 'hidden';
 
         if (values.dateOfBirth) {
-          dateOfBirth = isTimestamp(values.dateOfBirth)
-            ? values.dateOfBirth
-            : Timestamp.fromDate(dayjs(values.dateOfBirth).toDate());
-
-          ageRange = values.hideAge ? 'hidden' : calculateAgeRange(dateOfBirth);
+          dateOfBirth = Timestamp.fromDate(values.dateOfBirth);
+          ageRange = values.hideAge
+            ? 'hidden'
+            : calculateAgeRange(values.dateOfBirth);
         }
 
         const displayName = await generateUniqueDisplayName(
@@ -245,7 +229,9 @@ ${commonMessage}`;
             firstName: userData?.firstName || '',
             lastName: userData?.lastName || '',
             preferredName: userData?.preferredName || '',
-            dateOfBirth: userData?.dateOfBirth || null,
+            dateOfBirth: userData?.dateOfBirth
+              ? userData.dateOfBirth.toDate()
+              : null,
             hideAge: userData?.hideAge || false,
             gender: userData?.gender || '',
           }}
@@ -282,11 +268,14 @@ ${commonMessage}`;
                 />
                 <DatePicker
                   label='Date of Birth *'
-                  value={timestampToDayjs(values.dateOfBirth)}
+                  value={values.dateOfBirth ? dayjs(values.dateOfBirth) : null}
                   onChange={(date: Dayjs | null) => {
-                    setFieldValue('dateOfBirth', dayjsToTimestamp(date));
+                    setFieldValue('dateOfBirth', date ? date.toDate() : null);
                   }}
                   format='DD/MM/YYYY'
+                  open={openDatePicker}
+                  onOpen={() => setOpenDatePicker(true)}
+                  onClose={() => setOpenDatePicker(false)}
                   slotProps={{
                     textField: {
                       fullWidth: true,
@@ -302,6 +291,7 @@ ${commonMessage}`;
                           hasSubmitted && errors.dateOfBirth
                             ? 'dateOfBirth-error'
                             : undefined,
+                        onClick: () => setOpenDatePicker(true),
                       },
                     },
                     popper: {

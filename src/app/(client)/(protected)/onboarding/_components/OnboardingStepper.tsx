@@ -4,6 +4,7 @@ import { OnboardingStage } from '@/types/onboarding';
 import { useAuth } from '@/contexts/AuthProvider';
 import { useEffect, useRef, useState } from 'react';
 import next from 'next';
+import { useRouter } from 'next/navigation';
 
 interface OnboardingStepperProps {
   activeStep: number;
@@ -19,6 +20,8 @@ export default function OnboardingStepper({
   isProcessing,
 }: OnboardingStepperProps) {
   const { user } = useAuth();
+  const router = useRouter();
+
   //TODO - responsively change these to use onboarding state names
   const nextLabel =
     activeStep === OnboardingStage.Complete - 1 ? 'Finish' : 'Next';
@@ -36,6 +39,25 @@ export default function OnboardingStepper({
     }
   }, [nextButtonRef]);
 
+  useEffect(() => {
+    // Push a new history state when the component mounts or activeStep changes
+    window.history.pushState({ activeStep }, '');
+
+    // Handle popstate event (when the user clicks the browser's back button)
+    const handlePopState = (event: PopStateEvent) => {
+      if (event.state && typeof event.state.activeStep === 'number') {
+        onBack();
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+
+    // Cleanup
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+    };
+  }, [activeStep, onBack]);
+
   return (
     <MobileStepper
       variant='dots'
@@ -44,6 +66,8 @@ export default function OnboardingStepper({
       activeStep={activeStep}
       sx={{
         flexGrow: 1,
+        padding: 0,
+        mt: 4,
       }}
       backButton={
         <Button

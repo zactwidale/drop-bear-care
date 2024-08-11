@@ -96,6 +96,7 @@ const LocationForm = forwardRef<LocationFormRef, LocationFormProps>(
                       setFieldValue('location', suburb);
                     }}
                     initialValue={values.location}
+                    autoFocus
                   />
                   {hasSubmitted && errors.location && (
                     <FormHelperText error id='location-error'>

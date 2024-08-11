@@ -6,7 +6,7 @@ import {
   type UserData,
 } from '@/types';
 import ChatBubblesIcon from '@/assets/icons/chatbubbles-outline.svg';
-import { lastActiveText } from '@/utils/timestampUtils';
+import { lastActiveText, reconstructTimestamp } from '@/utils/timestampUtils';
 import { commonLanguages } from '@/utils/commonLanguages';
 
 interface MinProfileProps {
@@ -111,12 +111,8 @@ const MinProfile: React.FC<MinProfileProps> = ({
               </Typography>
             )}
           </Typography>
-          <Typography
-            variant='body2'
-            color='text.primary'
-            sx={{ whiteSpace: 'nowrap' }}
-          >
-            Within: {user.distance.toFixed(0)} km
+          <Typography variant='body2' color='text.secondary'>
+            {`${user.suburb} (${user.distance.toFixed(0)}km)`}
           </Typography>
         </Box>
       </Box>
@@ -136,7 +132,7 @@ const MinProfile: React.FC<MinProfileProps> = ({
             Last active:
           </Typography>
           <Typography variant='body2' color='text.primary'>
-            {lastActiveText(user.lastActive!)}
+            {lastActiveText(reconstructTimestamp(user.lastActive!))}
           </Typography>
         </Box>
         <IconButton

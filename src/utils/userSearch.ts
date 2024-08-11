@@ -1,17 +1,9 @@
-import { GeoPoint } from 'firebase-admin/firestore';
 import { SuburbFirestore, UserData, SearchResult } from '@/types';
-import {
-  collection,
-  getDocs,
-  type QueryDocumentSnapshot,
-} from 'firebase/firestore';
-import { db } from '@/lib/firebase/config';
-import { ensureTimestamp } from './timestampUtils';
+import { Firestore } from 'firebase-admin/firestore';
 
 function degreesToRadians(degrees: number): number {
   return degrees * (Math.PI / 180);
 }
-
 export function calculateDistance(
   lat1: number,
   lon1: number,
@@ -35,19 +27,20 @@ export function calculateDistance(
 }
 
 export async function searchUsersWithinRadius(
+  adminDb: Firestore,
   currentUserLocation: SuburbFirestore,
   radiusKm: number,
   currentUserId: string
 ): Promise<SearchResult[]> {
   const { latitude, longitude } = currentUserLocation.geopoint;
 
-  const usersRef = collection(db, 'users');
+  const usersRef = adminDb.collection('users');
 
   try {
-    const querySnapshot = await getDocs(usersRef);
+    const querySnapshot = await usersRef.get();
     const results: SearchResult[] = [];
 
-    querySnapshot.forEach((doc: QueryDocumentSnapshot) => {
+    querySnapshot.forEach((doc) => {
       const userData = doc.data() as UserData;
 
       if (userData.uid === currentUserId) {
@@ -69,10 +62,11 @@ export async function searchUsersWithinRadius(
             displayName: userData.displayName,
             photoURL: userData.photoURL,
             membershipType: userData.membershipType!,
+            suburb: userData.location!.suburb,
             distance,
             languages: userData.languages!,
             availability: userData.availability!,
-            lastActive: ensureTimestamp(userData.lastActive!),
+            lastActive: userData.lastActive,
           });
         }
       }

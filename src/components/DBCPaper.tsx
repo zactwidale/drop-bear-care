@@ -3,9 +3,9 @@ import { Paper, PaperProps } from '@mui/material';
 import { styled } from '@mui/material/styles';
 
 const StyledPaper = styled(Paper)(({ theme }) => ({
-  padding: theme.spacing(1),
+  padding: theme.spacing(2),
   borderRadius: theme.spacing(2),
-  width: '90%',
+  width: '95%',
   marginLeft: 'auto',
   marginRight: 'auto',
   marginBottom: theme.spacing(4),

@@ -4,6 +4,7 @@ import { Paper } from '@mui/material';
 import DBCMarkdown from '@/components/DBCMarkdown';
 import { useAuth } from '@/contexts/AuthProvider';
 import DBCPaper from '@/components/DBCPaper';
+import { withPublicRouteProtection } from '@/hocs/routeGuards';
 
 const card1 = `
 ## Support Seekers
@@ -87,4 +88,4 @@ const Pricing: React.FC = () => {
   );
 };
 
-export default Pricing;
+export default withPublicRouteProtection(Pricing);

@@ -64,7 +64,7 @@ know. It might come in handy!`;
         case 'seeker':
           return `English might be the official lingo around here, but we are
 a beautifully multi-cultural country, with a diverse array of languages. If you
-have any particular language requirements - including sign language - please let
+have any particular language requirements (or interests) - including sign language - please let
 prospective support workers know.`;
         default:
           return ``;

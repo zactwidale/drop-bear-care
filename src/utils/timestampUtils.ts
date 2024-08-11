@@ -10,9 +10,38 @@ export function isTimestampLike(
 
 export function reconstructTimestamp(obj: any): Timestamp | null {
   if (obj instanceof Timestamp) return obj;
-  if (isTimestampLike(obj)) {
-    return new Timestamp(obj.seconds, obj.nanoseconds);
+
+  if (typeof obj === 'object' && obj !== null) {
+    // // Check for seconds and nanoseconds
+    // if ('seconds' in obj && 'nanoseconds' in obj) {
+    //   return new Timestamp(obj.seconds, obj.nanoseconds);
+    // }
+
+    // Check for _seconds and _nanoseconds (some serialization formats use these)
+    if ('_seconds' in obj && '_nanoseconds' in obj) {
+      return new Timestamp(obj._seconds, obj._nanoseconds);
+    }
+
+    // // Check for a 'toDate' function (Firestore sometimes serializes to this format)
+    // if (typeof obj.toDate === 'function') {
+    //   return Timestamp.fromDate(obj.toDate());
+    // }
   }
+
+  // // Check if it's a number (Unix timestamp in seconds or milliseconds)
+  // if (typeof obj === 'number') {
+  //   return Timestamp.fromMillis(obj * (obj > 100000000000 ? 1 : 1000));
+  // }
+
+  // // Check if it's an ISO date string
+  // if (typeof obj === 'string') {
+  //   const date = new Date(obj);
+  //   if (!isNaN(date.getTime())) {
+  //     return Timestamp.fromDate(date);
+  //   }
+  // }
+
+  console.error('Unable to reconstruct Timestamp from:', obj);
   return null;
 }
 

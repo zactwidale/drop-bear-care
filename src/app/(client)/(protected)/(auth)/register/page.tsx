@@ -48,7 +48,7 @@ const validationSchema = Yup.object().shape({
 
 const Register: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
-  const emailRef = useRef<HTMLInputElement>(null);
+  // const emailRef = useRef<HTMLInputElement>(null);
   const { signIn, createAccount, sendVerificationEmail, user, loading } =
     useAuth();
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -65,13 +65,13 @@ const Register: React.FC = () => {
     }
   }, []);
 
-  useEffect(() => {
-    if (!loading && user) {
-      router.push('/search');
-    } else if (!loading && !user) {
-      emailRef.current!.focus();
-    }
-  }, [user, loading, router]);
+  // useEffect(() => {
+  //   if (!loading && user) {
+  //     router.push('/search');
+  //   } else if (!loading && !user) {
+  //     emailRef.current!.focus();
+  //   }
+  // }, [user, loading, router]);
 
   const initialValues = {
     email: email,
@@ -163,7 +163,7 @@ const Register: React.FC = () => {
                 name='email'
                 autoComplete='email'
                 label='Email'
-                inputRef={emailRef}
+                // inputRef={emailRef}
                 error={hasSubmitted && !!errors.email}
                 helperText={hasSubmitted && errors.email}
                 aria-required='true'

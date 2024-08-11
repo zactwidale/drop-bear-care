@@ -175,7 +175,11 @@ const InfoModal: React.FC<InfoModalProps> = ({
       )}
       <DialogActions>
         <Box sx={{ width: '100%', textAlign: 'right' }}>
-          <Button onClick={onClose} autoFocus ref={closeButtonRef}>
+          <Button
+            onClick={onClose}
+            // autoFocus
+            ref={closeButtonRef}
+          >
             {closeButtonText}
           </Button>
         </Box>

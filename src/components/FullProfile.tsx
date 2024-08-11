@@ -81,6 +81,7 @@ const FullProfile: React.FC<FullProfileProps> = ({
   };
 
   const distance = calculateDisplayDistance();
+
   const languagesText =
     userData && currentUserData
       ? commonLanguages(userData.languages!, currentUserData.languages!, true)

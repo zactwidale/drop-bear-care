@@ -13,15 +13,13 @@ import {
   DialogTitle,
   IconButton,
   InputAdornment,
-  Paper,
   TextField,
 } from '@mui/material';
 import { Formik, Form, Field, type FormikHelpers } from 'formik';
 import * as Yup from 'yup';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { FirebaseError } from '@firebase/util';
 import { useRouter } from 'next/navigation';
-import LoadingPage from '@/components/LoadingPage';
 import { narrowPaper } from '@/lib/constants';
 import { getEmailFromCookie } from '@/utils/cookieUtils';
 import { EmailLink } from '@/components/EmailLink';
@@ -46,14 +44,14 @@ const validationSchema = Yup.object().shape({
 
 const Login: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
-  const emailRef = useRef<HTMLInputElement>(null);
+  // const emailRef = useRef<HTMLInputElement>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [openErrorDialog, setOpenErrorDialog] = useState(false);
   const [isSubmittingSocial, setSubmittingSocial] = useState(false);
   const router = useRouter();
   const [email, setEmail] = useState<string>('');
   const [hasSubmitted, setHasSubmitted] = useState(false);
-  const { user, loading, signIn } = useAuth();
+  const { signIn } = useAuth();
 
   useEffect(() => {
     const cookieEmail = getEmailFromCookie();
@@ -62,15 +60,15 @@ const Login: React.FC = () => {
     }
   }, []);
 
-  useEffect(() => {
-    if (!loading) {
-      if (user) {
-        router.push('/search');
-      } else {
-        emailRef.current?.focus();
-      }
-    }
-  }, [user, loading, router]);
+  // useEffect(() => {
+  //   if (!loading) {
+  //     if (user) {
+  //       router.push('/search');
+  //     } else {
+  //       emailRef.current?.focus();
+  //     }
+  //   }
+  // }, [user, loading, router]);
 
   let initialValues = {
     email: email,
@@ -148,7 +146,7 @@ const Login: React.FC = () => {
                 name='email'
                 autoComplete='email'
                 label='Email'
-                inputRef={emailRef}
+                // inputRef={emailRef}
                 error={hasSubmitted && !!errors.email}
                 helperText={hasSubmitted && errors.email}
                 aria-required='true'

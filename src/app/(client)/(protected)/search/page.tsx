@@ -11,8 +11,15 @@ import { SearchResult, type UserData } from '@/types';
 import { Button } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import FullProfile from '@/components/FullProfile';
-import { arrayRemove, arrayUnion, doc, updateDoc } from 'firebase/firestore';
-import { db } from '@/lib/firebase/config';
+import {
+  GeoPoint,
+  arrayRemove,
+  arrayUnion,
+  doc,
+  updateDoc,
+} from 'firebase/firestore';
+import { auth, db } from '@/lib/firebase/config';
+import { reconstructTimestamp } from '@/utils/timestampUtils';
 
 const Search = () => {
   const { userData, updateUserData } = useAuth();
@@ -36,17 +43,43 @@ const Search = () => {
     setIsProfileOpen(true);
 
     try {
-      const response = await fetch(`/api/users/${uid}`);
+      const idToken = await auth.currentUser?.getIdToken();
+
+      if (!idToken) {
+        throw new Error('User not authenticated');
+      }
+
+      const response = await fetch(`/api/users/${uid}`, {
+        headers: {
+          Authorization: `Bearer ${idToken}`,
+        },
+      });
+
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.error || 'Failed to fetch user data');
       }
 
-      const fullUserData: UserData = await response.json();
-      setSelectedUser(fullUserData);
+      const userData: UserData = await response.json();
+
+      // Reconstruct GeoPoint
+      if (userData.location?.geopoint) {
+        userData.location.geopoint = new GeoPoint(
+          userData.location.geopoint.latitude,
+          userData.location.geopoint.longitude
+        );
+      }
+      // Reconstruct Timestamp
+      if (userData.lastActive) {
+        userData.lastActive = reconstructTimestamp(userData.lastActive)!;
+      }
+
+      setSelectedUser(userData);
     } catch (error) {
       console.error('Error fetching full user data:', error);
       setSelectedUser(null);
+      // Optionally, you can set an error state here to display to the user
+      // setError('Failed to load user profile. Please try again.');
     } finally {
       setIsProfileLoading(false);
     }
@@ -65,9 +98,18 @@ const Search = () => {
 
     setIsSearching(true);
     try {
+      const idToken = await auth.currentUser?.getIdToken();
+
+      if (!idToken) {
+        throw new Error('User not authenticated');
+      }
+
       const response = await fetch('/api/user-search', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${idToken}`,
+        },
         body: JSON.stringify({
           currentUserLocation: userData.location,
           radiusKm: distance,
@@ -76,13 +118,15 @@ const Search = () => {
       });
 
       if (!response.ok) {
-        throw new Error('Search failed');
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Search failed');
       }
 
       const results: SearchResult[] = await response.json();
       setSearchResults(results);
     } catch (error) {
       console.error('Error searching users:', error);
+      // Handle the error (e.g., show an error message to the user)
     } finally {
       setIsSearching(false);
     }
@@ -106,11 +150,8 @@ const Search = () => {
       });
 
       updateUserData({
-        ...userData,
         hiddenProfiles: updatedHiddenProfiles,
       });
-
-      console.log(`Profile ${hide ? 'hidden' : 'unhidden'} successfully`);
     } catch (error) {
       console.error('Error updating hidden profiles:', error);
       throw error;

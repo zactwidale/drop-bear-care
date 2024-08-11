@@ -126,7 +126,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     lastName: string,
     preferredName?: string
   ): Promise<string> => {
-    const newBaseName = `${preferredName || firstName} ${lastName.charAt(0)}`;
+    const trimmedFirstName = firstName.trim().split(' ')[0];
+    const trimmedLastName = lastName.trim();
+    const trimmedPreferredName = preferredName?.trim();
+
+    const newBaseName = `${
+      trimmedPreferredName || trimmedFirstName
+    } ${trimmedLastName.charAt(0)}`;
 
     return await runTransaction(db, async (transaction) => {
       const userRef = doc(db, 'users', userId);

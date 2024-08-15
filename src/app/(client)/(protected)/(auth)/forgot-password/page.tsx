@@ -1,6 +1,5 @@
 'use client';
 import DBCLayout from '@/components/DBCLayout';
-import { useKeyboardAvoidance } from '@/hooks/useKeyboardAvoidance';
 import DBCMarkdown from '@/components/DBCMarkdown';
 import {
   Box,
@@ -83,7 +82,6 @@ const Login: React.FC = () => {
   If you don't receive the email, you may have misspelled your email address.  In which case, simply try again.
   If you have problems, please (contact support)[/contact].`;
 
-  useKeyboardAvoidance();
   return (
     <>
       <DBCLayout title='Password Reset' />

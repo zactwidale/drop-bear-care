@@ -7,10 +7,7 @@ import SuburbSelector from './SuburbSelector';
 import { getNextOnboardingStage } from '@/types/onboarding';
 import DBCMarkdown from '@/components/DBCMarkdown';
 import type { SuburbFirestore, SuburbJSON } from '@/types';
-import {
-  firestoreToJSON,
-  jsonToFirestore,
-} from '../../../../../types/location';
+import { firestoreToJSON, jsonToFirestore } from '../../types/location';
 
 interface LocationFormValues {
   location: SuburbJSON | null;

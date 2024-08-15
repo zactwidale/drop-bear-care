@@ -1,6 +1,5 @@
 'use client';
 import DBCLayout from '@/components/DBCLayout';
-import { useKeyboardAvoidance } from '@/hooks/useKeyboardAvoidance';
 import DBCMarkdown from '@/components/DBCMarkdown';
 import { Visibility, VisibilityOff } from '@mui/icons-material';
 import {
@@ -113,8 +112,6 @@ const Login: React.FC = () => {
   const header1 = `## Old School Login`;
   const header2 = `New around here? &nbsp;&nbsp;&nbsp;&nbsp;`;
   const forgotPassword = `Forgot your password? &nbsp;&nbsp;&nbsp;&nbsp;`;
-
-  useKeyboardAvoidance();
 
   return (
     <>

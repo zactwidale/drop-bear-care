@@ -1,12 +1,9 @@
 'use client';
 import Typography from '@mui/material/Typography';
 import DBCLayout from '@/components/DBCLayout';
-import { useKeyboardAvoidance } from '@/hooks/useKeyboardAvoidance';
 import { withAuthProtection } from '@/hocs/routeGuards';
 
 const Chats = () => {
-  useKeyboardAvoidance();
-
   return (
     <>
       <DBCLayout title='Chats' />

@@ -1,6 +1,5 @@
 'use client';
 import DBCLayout from '@/components/DBCLayout';
-import { useKeyboardAvoidance } from '@/hooks/useKeyboardAvoidance';
 import DBCMarkdown from '@/components/DBCMarkdown';
 import { Visibility, VisibilityOff } from '@mui/icons-material';
 import {
@@ -122,8 +121,6 @@ const Register: React.FC = () => {
   For those who don't trust the tech giants.`;
 
   const header2 = `Already have an account?`;
-
-  useKeyboardAvoidance();
 
   if (loading) {
     return <LoadingPage />;

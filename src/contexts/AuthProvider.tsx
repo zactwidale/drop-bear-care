@@ -7,7 +7,12 @@ import React, {
   useEffect,
   useState,
 } from 'react';
-import { User, onAuthStateChanged } from 'firebase/auth';
+import {
+  User,
+  onAuthStateChanged,
+  getRedirectResult,
+  type UserCredential,
+} from 'firebase/auth';
 import { auth, db } from '@/lib/firebase/config';
 import {
   doc,
@@ -43,6 +48,15 @@ export interface AuthContextProps {
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
   sendVerificationEmail: () => Promise<void>;
+  sendAccountDeletionEmail: () => Promise<void>;
+  handleAccountDeletion: (token: string) => Promise<void>;
+  verifyDeletionToken: (token: string) => Promise<boolean>;
+}
+
+interface ExtendedUserCredential extends UserCredential {
+  _tokenResponse?: {
+    providerId?: string;
+  };
 }
 
 const AuthContext = createContext<AuthContextProps | undefined>(undefined);
@@ -94,31 +108,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     },
     []
   );
-
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      setUser(firebaseUser);
-      if (firebaseUser) {
-        await fetchOrCreateUserDoc(firebaseUser);
-      } else {
-        setUserData(null);
-      }
-      setLoading(false);
-    });
-
-    authServices
-      .handleRedirectResult()
-      .then((result) => {
-        if (result && result.user) {
-          handleNewUserRegistration(result.user, result._tokenResponse);
-        }
-      })
-      .catch((error) => {
-        console.error('Error handling redirect result:', error);
-      });
-
-    return () => unsubscribe();
-  }, [handleNewUserRegistration]);
 
   const generateUniqueDisplayName = async (
     userId: string,
@@ -190,7 +179,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     return await getDownloadURL(photoRef);
   };
 
-  const fetchOrCreateUserDoc = async (user: User) => {
+  const fetchOrCreateUserDoc = useCallback(async (user: User) => {
     const userRef = doc(db, 'users', user.uid);
     try {
       setLoading(true);
@@ -199,7 +188,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         let photoURL = user.photoURL || '';
 
         if (!photoURL) {
-          // Generate and upload default avatar if no photo URL is provided
           try {
             photoURL = await generateAndUploadRandomAvatar(user.uid);
           } catch (error) {
@@ -232,7 +220,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   const updateUserData = async (updates: Partial<UserData>) => {
     try {
@@ -303,6 +291,54 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   };
 
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      setUser(firebaseUser);
+      if (firebaseUser) {
+        await fetchOrCreateUserDoc(firebaseUser);
+      } else {
+        setUserData(null);
+      }
+      setLoading(false);
+    });
+
+    const handleRedirectResults = async () => {
+      try {
+        const result = (await getRedirectResult(
+          auth
+        )) as ExtendedUserCredential | null;
+        if (result && result.user) {
+          if (result._tokenResponse?.providerId) {
+            // This is a sign-in or sign-up redirect
+            await handleNewUserRegistration(result.user, result._tokenResponse);
+          }
+        }
+      } catch (error) {
+        console.error('Error handling redirect result:', error);
+        // Handle the error appropriately
+      }
+    };
+
+    handleRedirectResults();
+
+    return () => unsubscribe();
+  }, [handleNewUserRegistration, fetchOrCreateUserDoc]);
+
+  const sendAccountDeletionEmail = async () => {
+    if (!user) {
+      throw new Error('No user is currently signed in');
+    }
+    await authServices.sendAccountDeletionEmail(user);
+  };
+
+  const handleAccountDeletion = async (token: string) => {
+    await authServices.handleAccountDeletion(token);
+  };
+
+  const verifyDeletionToken = async (token: string) => {
+    return await authServices.verifyDeletionToken(token);
+  };
+
   const value: AuthContextProps = {
     user,
     userData,
@@ -314,6 +350,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     signOut,
     resetPassword,
     sendVerificationEmail,
+    sendAccountDeletionEmail,
+    handleAccountDeletion,
+    verifyDeletionToken,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

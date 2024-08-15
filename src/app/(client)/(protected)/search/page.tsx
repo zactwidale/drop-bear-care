@@ -2,7 +2,6 @@
 
 import React, { useState } from 'react';
 import DBCLayout from '@/components/DBCLayout';
-import { useKeyboardAvoidance } from '@/hooks/useKeyboardAvoidance';
 import { useAuth } from '@/contexts/AuthProvider';
 import { withAuthProtection } from '@/hocs/routeGuards';
 import UserSearch from '@/components/UserSearch';
@@ -31,8 +30,6 @@ const Search = () => {
   const [distance, setDistance] = useState<number>(10);
   const [isProfileOpen, setIsProfileOpen] = useState<boolean>(false);
   const [isProfileLoading, setIsProfileLoading] = useState<boolean>(false);
-
-  useKeyboardAvoidance();
 
   const handleOpenChat = (uid: string) => {
     alert(`Opening chat with user ${uid}`);

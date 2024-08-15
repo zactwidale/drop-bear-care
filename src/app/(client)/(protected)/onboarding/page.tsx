@@ -4,7 +4,7 @@ import DBCAppBar from '@/components/DBCAppBar';
 import { useAuth } from '@/contexts/AuthProvider';
 import { withOnboardingProtection } from '@/hocs/routeGuards';
 import { useRouter } from 'next/navigation';
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import LogoutIcon from '@mui/icons-material/Logout';
 import {
   Box,
@@ -14,7 +14,6 @@ import {
   DialogContent,
   DialogTitle,
   IconButton,
-  Paper,
 } from '@mui/material';
 import DBCMarkdown from '@/components/DBCMarkdown';
 import {
@@ -24,27 +23,32 @@ import {
   getPreviousOnboardingStage,
   isLastOnboardingStage,
 } from '@/types/onboarding';
-import OnboardingStepper from './_components/OnboardingStepper';
-import EmailVerificationForm from './_components/EmailVerificationForm';
+import OnboardingStepper from '@/components/OnboardingAndProfile/OnboardingStepper';
+import EmailVerificationForm from '@/components/EmailVerificationForm';
 import MembershipTypeForm, {
   type MembershipTypeFormRef,
-} from './_components/MembershipTypeForm';
-import BioForm, { BioFormRef } from './_components/BioForm';
+} from '@/components/OnboardingAndProfile/MembershipTypeForm';
+import BioForm, { BioFormRef } from '@/components/OnboardingAndProfile/BioForm';
 import PersonalDetailsForm, {
   type PersonalDetailsFormRef,
-} from './_components/PersonalDetailsForm';
-import PhotosForm, { type PhotosFormRef } from './_components/PhotosForm';
-import LocationForm, { type LocationFormRef } from './_components/LocationForm';
+} from '@/components/OnboardingAndProfile/PersonalDetailsForm';
+import PhotosForm, {
+  type PhotosFormRef,
+} from '@/components/OnboardingAndProfile/PhotosForm';
+import LocationForm, {
+  type LocationFormRef,
+} from '@/components/OnboardingAndProfile/LocationForm';
 import AvailabilityForm, {
   type AvailabilityFormRef,
-} from './_components/AvailabilityForm';
+} from '@/components/OnboardingAndProfile/AvailabilityForm';
 import LanguagesForm, {
   type LanguagesFormRef,
-} from './_components/LanguagesForm';
-import WelcomeForm, { type WelcomeFormRef } from './_components/WelcomeForm';
+} from '@/components/OnboardingAndProfile/LanguagesForm';
+import WelcomeForm, {
+  type WelcomeFormRef,
+} from '@/components/OnboardingAndProfile/WelcomeForm';
 import LoadingPage from '@/components/LoadingPage';
 import DBCPaper from '@/components/DBCPaper';
-import { log } from 'console';
 
 const logoutConfirmation = `
 This onboarding process is a necessary part of the process of utilising our services to connect with other members.

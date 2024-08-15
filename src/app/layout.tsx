@@ -9,6 +9,7 @@ import theme from '@/theme';
 import './globals.css';
 import { AuthProvider } from '@/contexts/AuthProvider';
 import { ActivityTracker } from '@/components/ActivityTracker';
+import ClientLayout from './ClientLayout';
 
 export const metadata: Metadata = {
   title: 'Drop Bear Care',
@@ -30,7 +31,7 @@ const RootLayout = ({ children }: { children: React.ReactNode }) => {
             />
             <AuthProvider>
               <ActivityTracker />
-              {children}
+              <ClientLayout>{children}</ClientLayout>
             </AuthProvider>
           </ThemeProvider>
         </AppRouterCacheProvider>

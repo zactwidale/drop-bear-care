@@ -1,9 +1,9 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 
-export default function DeleteAccountPage() {
+function DeleteAccountContent() {
   const [message, setMessage] = useState('Deleting account...');
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -49,5 +49,13 @@ export default function DeleteAccountPage() {
       <h1>Account Deletion</h1>
       <p>{message}</p>
     </div>
+  );
+}
+
+export default function DeleteAccountPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <DeleteAccountContent />
+    </Suspense>
   );
 }

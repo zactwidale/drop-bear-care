@@ -21,6 +21,7 @@ import {
   setDoc,
   updateDoc,
   Timestamp,
+  onSnapshot,
 } from 'firebase/firestore';
 import * as authServices from '@/lib/firebase/authServices';
 import { OnboardingStage } from '@/types/onboarding';
@@ -179,61 +180,61 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     return await getDownloadURL(photoRef);
   };
 
-  const fetchOrCreateUserDoc = useCallback(async (user: User) => {
-    const userRef = doc(db, 'users', user.uid);
-    try {
-      setLoading(true);
-      const userSnap = await getDoc(userRef);
-      if (!userSnap.exists()) {
-        let photoURL = user.photoURL || '';
+  // const fetchOrCreateUserDoc = useCallback(async (user: User) => {
+  //   const userRef = doc(db, 'users', user.uid);
+  //   try {
+  //     setLoading(true);
+  //     const userSnap = await getDoc(userRef);
+  //     if (!userSnap.exists()) {
+  //       let photoURL = user.photoURL || '';
 
-        if (!photoURL) {
-          try {
-            photoURL = await generateAndUploadRandomAvatar(user.uid);
-          } catch (error) {
-            console.error('Error generating default avatar:', error);
-          }
-        }
+  //       if (!photoURL) {
+  //         try {
+  //           photoURL = await generateAndUploadRandomAvatar(user.uid);
+  //         } catch (error) {
+  //           console.error('Error generating default avatar:', error);
+  //         }
+  //       }
 
-        const newUserData: UserData = {
-          uid: user.uid,
-          firstName: '',
-          lastName: '',
-          displayName: '',
-          photoURL: photoURL,
-          lastActive: Timestamp.fromMillis(Date.now()),
-          createdAt: Timestamp.fromMillis(Date.now()),
-          onboardingStage: user.emailVerified
-            ? OnboardingStage.MembershipType
-            : OnboardingStage.EmailVerification,
-          // ... (other fields as needed)
-        };
-        await setDoc(userRef, newUserData);
-        setUserData(newUserData);
-      } else {
-        // Existing user, just load their data
-        setUserData(userSnap.data() as UserData);
-      }
-    } catch (error) {
-      console.error('Error in fetchOrCreateUserDoc:', error);
-      throw error;
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  //       const newUserData: UserData = {
+  //         uid: user.uid,
+  //         firstName: '',
+  //         lastName: '',
+  //         displayName: '',
+  //         photoURL: photoURL,
+  //         lastActive: Timestamp.fromMillis(Date.now()),
+  //         createdAt: Timestamp.fromMillis(Date.now()),
+  //         onboardingStage: user.emailVerified
+  //           ? OnboardingStage.MembershipType
+  //           : OnboardingStage.EmailVerification,
+  //         // ... (other fields as needed)
+  //       };
+  //       await setDoc(userRef, newUserData);
+  //       setUserData(newUserData);
+  //     } else {
+  //       // Existing user, just load their data
+  //       setUserData(userSnap.data() as UserData);
+  //     }
+  //   } catch (error) {
+  //     console.error('Error in fetchOrCreateUserDoc:', error);
+  //     throw error;
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // }, []);
 
   const updateUserData = async (updates: Partial<UserData>) => {
     try {
       if (!user) throw new Error('No user logged in');
       const userRef = doc(db, 'users', user.uid);
       await updateDoc(userRef, updates);
-      setUserData((prevData) => ({ ...prevData!, ...updates }));
+      // Removed setUserData call as it's handled by the listener
     } catch (error) {
-      //TODO - log error to sentry
       console.error('Error updating user data', error);
       throw error;
     }
   };
+
   const createAccount = async (email: string, password: string) => {
     try {
       const userCredential = await authServices.createAccount(email, password);
@@ -292,14 +293,34 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+    const unsubscribeAuth = onAuthStateChanged(auth, async (firebaseUser) => {
       setUser(firebaseUser);
       if (firebaseUser) {
-        await fetchOrCreateUserDoc(firebaseUser);
+        const userRef = doc(db, 'users', firebaseUser.uid);
+
+        // Check if the user document exists and create it if it doesn't
+        const userSnap = await getDoc(userRef);
+        if (!userSnap.exists()) {
+          await handleNewUserRegistration(firebaseUser);
+        }
+
+        // Set up real-time listener for user data
+        const unsubscribeUser = onSnapshot(userRef, (doc) => {
+          if (doc.exists()) {
+            setUserData(doc.data() as UserData);
+          } else {
+            console.error('User document does not exist');
+          }
+          setLoading(false);
+        });
+
+        return () => {
+          unsubscribeUser();
+        };
       } else {
         setUserData(null);
+        setLoading(false);
       }
-      setLoading(false);
     });
 
     const handleRedirectResults = async () => {
@@ -309,20 +330,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         )) as ExtendedUserCredential | null;
         if (result && result.user) {
           if (result._tokenResponse?.providerId) {
-            // This is a sign-in or sign-up redirect
             await handleNewUserRegistration(result.user, result._tokenResponse);
           }
         }
       } catch (error) {
         console.error('Error handling redirect result:', error);
-        // Handle the error appropriately
       }
     };
 
     handleRedirectResults();
 
-    return () => unsubscribe();
-  }, [handleNewUserRegistration, fetchOrCreateUserDoc]);
+    return () => unsubscribeAuth();
+  }, [handleNewUserRegistration]);
 
   const sendAccountDeletionEmail = async () => {
     if (!user) {

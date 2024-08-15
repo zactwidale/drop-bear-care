@@ -101,7 +101,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
           photoURL: photoURL,
           lastActive: Timestamp.fromMillis(Date.now()),
           createdAt: Timestamp.fromMillis(Date.now()),
-          onboardingStage: OnboardingStage.MembershipType,
+          onboardingStage: user.emailVerified
+            ? OnboardingStage.MembershipType
+            : OnboardingStage.EmailVerification,
         };
         await setDoc(userRef, newUserData);
         setUserData(newUserData);
@@ -294,6 +296,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
   useEffect(() => {
     const unsubscribeAuth = onAuthStateChanged(auth, async (firebaseUser) => {
+      setLoading(true);
       setUser(firebaseUser);
       if (firebaseUser) {
         const userRef = doc(db, 'users', firebaseUser.uid);
@@ -335,6 +338,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         }
       } catch (error) {
         console.error('Error handling redirect result:', error);
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -342,7 +347,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
     return () => unsubscribeAuth();
   }, [handleNewUserRegistration]);
-
   const sendAccountDeletionEmail = async () => {
     if (!user) {
       throw new Error('No user is currently signed in');

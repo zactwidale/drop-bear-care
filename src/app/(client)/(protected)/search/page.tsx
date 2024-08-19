@@ -19,6 +19,7 @@ import {
 } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase/config';
 import { reconstructTimestamp } from '@/utils/timestampUtils';
+import UserHeaderButton from '@/components/UserHeaderButton';
 
 const Search = () => {
   const { userData, updateUserData } = useAuth();
@@ -168,7 +169,9 @@ const Search = () => {
             >
               New Search
             </Button>
-          ) : undefined
+          ) : (
+            <UserHeaderButton />
+          )
         }
       />
       {searchResults === null ? (

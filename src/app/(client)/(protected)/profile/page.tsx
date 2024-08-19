@@ -13,6 +13,7 @@ import DBCLayout from '@/components/DBCLayout';
 import { withAuthProtection } from '@/hocs/routeGuards';
 
 import AccountDeletionForm from '@/components/OnboardingAndProfile/AccountDeletionForm';
+import UserHeaderButton from '@/components/UserHeaderButton';
 
 // import AccountDetailsForm from '@/components/profile/AccountDetailsForm';
 // import MembershipTypeForm from '@/components/profile/MembershipTypeForm';
@@ -127,7 +128,7 @@ const Profile = () => {
 
   return (
     <>
-      <DBCLayout title='Edit Profile' />
+      <DBCLayout title='Edit Profile' rightButton={<UserHeaderButton />} />
       <Box sx={{ maxWidth: 800, margin: 'auto', padding: 2 }}>
         <Typography variant='h4' gutterBottom>
           Edit Your Profile

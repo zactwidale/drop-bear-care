@@ -5,6 +5,7 @@ import DBCMarkdown from '@/components/DBCMarkdown';
 import { useAuth } from '@/contexts/AuthProvider';
 import DBCPaper from '@/components/DBCPaper';
 import { withPublicRouteProtection } from '@/hocs/routeGuards';
+import UserHeaderButton from '@/components/UserHeaderButton';
 
 const card1 = `
 ## Support Seekers
@@ -71,7 +72,12 @@ const Pricing: React.FC = () => {
   const { user } = useAuth();
   return (
     <>
-      <DBCLayout title='Pricing Policies' showLoginButton={!user} />
+      <DBCLayout
+        title='Pricing Policies'
+        {...(user
+          ? { rightButton: <UserHeaderButton /> }
+          : { showLoginButton: true })}
+      />
       <DBCPaper>
         <DBCMarkdown text={card1} />
       </DBCPaper>
@@ -88,4 +94,4 @@ const Pricing: React.FC = () => {
   );
 };
 
-export default withPublicRouteProtection(Pricing);
+export default Pricing;

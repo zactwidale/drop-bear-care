@@ -49,6 +49,7 @@ import WelcomeForm, {
 } from '@/components/OnboardingAndProfile/WelcomeForm';
 import LoadingPage from '@/components/LoadingPage';
 import DBCPaper from '@/components/DBCPaper';
+import UserHeaderButton from '@/components/UserHeaderButton';
 
 const logoutConfirmation = `
 This onboarding process is a necessary part of the process of utilising our services to connect with other members.
@@ -266,28 +267,40 @@ const Onboarding = () => {
       />
       <div ref={contentRef}>
         <DBCPaper>
-          {userData!.onboardingStage === OnboardingStage.Welcome ? (
-            <DBCMarkdown text={`## Welcome to Drop Bear Care!`} />
-          ) : userData!.onboardingStage ===
-            OnboardingStage.MembershipType ? null : userData!
-              .onboardingStage === OnboardingStage.Availability ? (
-            userData!.membershipType === 'provider' ? (
-              <DBCMarkdown text={`## Availability`} />
+          <Box sx={{ position: 'relative', padding: 2 }}>
+            <Box
+              sx={{
+                position: 'absolute',
+                top: 8,
+                right: 8,
+                zIndex: 1,
+              }}
+            >
+              <UserHeaderButton />
+            </Box>
+            {userData!.onboardingStage === OnboardingStage.Welcome ? (
+              <DBCMarkdown text={`## Welcome to Drop Bear Care!`} />
+            ) : userData!.onboardingStage ===
+              OnboardingStage.MembershipType ? null : userData!
+                .onboardingStage === OnboardingStage.Availability ? (
+              userData!.membershipType === 'provider' ? (
+                <DBCMarkdown text={`## Availability`} />
+              ) : (
+                <DBCMarkdown text={`## Required Support Hours`} />
+              )
             ) : (
-              <DBCMarkdown text={`## Required Support Hours`} />
-            )
-          ) : (
-            <DBCMarkdown
-              text={`## ${getOnboardingStageName(userData!.onboardingStage)}`}
+              <DBCMarkdown
+                text={`## ${getOnboardingStageName(userData!.onboardingStage)}`}
+              />
+            )}
+            {onboardingStageComponent()}
+            <OnboardingStepper
+              activeStep={userData!.onboardingStage}
+              onNext={handleNext}
+              onBack={handleBack}
+              isProcessing={isProcessing}
             />
-          )}
-          {onboardingStageComponent()}
-          <OnboardingStepper
-            activeStep={userData!.onboardingStage}
-            onNext={handleNext}
-            onBack={handleBack}
-            isProcessing={isProcessing}
-          />
+          </Box>
         </DBCPaper>
       </div>
       <Dialog open={openDialog} onClose={handleCloseDialog}>
